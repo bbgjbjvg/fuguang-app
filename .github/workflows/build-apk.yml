@@ -25,35 +25,37 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
-
-      - name: Build APK with Bubblewrap
+      - name: Install and run pwa2apk
         run: |
-          npx @bubblewrap/cli init \
-            --manifest https://9ca109cd9892499cb8718c25298d991d.app.codebuddy.work/manifest.json \
-            --directory bubblewrap-output \
-            --jvmArgs "-Xmx2g"
-          cd bubblewrap-output
-          npx @bubblewrap/cli build
-          cd ..
-          mkdir -p apk-output
-          find bubblewrap-output -name "*.apk" -exec cp {} apk-output/ \;
-          find bubblewrap-output -name "*.aab" -exec cp {} apk-output/ \;
-        continue-on-error: true
+          # Clone pwa2apk from Tonihj77-T (TWA-based APK builder)
+          git clone https://github.com/Tonihj77-T/pwa2apk.git /tmp/pwa2apk
+          cd /tmp/pwa2apk
+          npm install
+          mkdir -p $GITHUB_WORKSPACE/apk-output
 
-      - name: Install pwa2apk (alternative method)
+          # Run pwa2apk
+          node bin/pwa2apk.js \
+            --url https://9ca109cd9892499cb8718c25298d991d.app.codebuddy.work \
+            --name "芙pop" \
+            --package com.fupop.app \
+            --color "#E84D8A" \
+            --output $GITHUB_WORKSPACE/apk-output \
+            --display standalone \
+            --app-version 1 || echo "pwa2apk exited with error"
+
+          ls -la $GITHUB_WORKSPACE/apk-output/ 2>/dev/null || echo "No output dir"
+
+      - name: List all APK files
         run: |
-          npm install -g git+https://github.com/trycua/pwa2apk.git || true
-          which pwa2apk && pwa2apk https://9ca109cd9892499cb8718c25298d991d.app.codebuddy.work/manifest.json --output apk-output2 || echo "pwa2apk failed"
-        continue-on-error: true
+          find $GITHUB_WORKSPACE -name "*.apk" -type f 2>/dev/null
+          find $GITHUB_WORKSPACE -name "*.aab" -type f 2>/dev/null
+          ls -la $GITHUB_WORKSPACE/apk-output/ 2>/dev/null || true
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: 芙pop-APK
           path: |
-            apk-output/**/*.apk
-            apk-output/**/*.aab
-            apk-output2/**/*.apk
-            apk-output2/**/*.aab
+            ${{ github.workspace }}/apk-output/*.apk
+            ${{ github.workspace }}/apk-output/*.aab
+          if-no-files-found: warn
