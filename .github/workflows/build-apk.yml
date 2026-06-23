@@ -22,12 +22,30 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install PWABuilder CLI
-        run: npm install -g @pwabuilder/cli
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Package APK
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Build APK with Bubblewrap
         run: |
-          npx pwabuilder package public --platform android --output apk-output
+          npx @bubblewrap/cli init \
+            --manifest https://9ca109cd9892499cb8718c25298d991d.app.codebuddy.work/manifest.json \
+            --directory bubblewrap-output \
+            --jvmArgs "-Xmx2g"
+          cd bubblewrap-output
+          npx @bubblewrap/cli build
+          cd ..
+          mkdir -p apk-output
+          find bubblewrap-output -name "*.apk" -exec cp {} apk-output/ \;
+          find bubblewrap-output -name "*.aab" -exec cp {} apk-output/ \;
+        continue-on-error: true
+
+      - name: Install pwa2apk (alternative method)
+        run: |
+          npm install -g git+https://github.com/trycua/pwa2apk.git || true
+          which pwa2apk && pwa2apk https://9ca109cd9892499cb8718c25298d991d.app.codebuddy.work/manifest.json --output apk-output2 || echo "pwa2apk failed"
         continue-on-error: true
 
       - name: Upload APK Artifact
@@ -37,3 +55,5 @@ jobs:
           path: |
             apk-output/**/*.apk
             apk-output/**/*.aab
+            apk-output2/**/*.apk
+            apk-output2/**/*.aab
