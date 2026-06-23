@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<title>芙pop</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/pwa-assets/icons/icon-192.svg">
+<link rel="apple-touch-icon" href="/pwa-assets/icons/icon-192.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto Sans SC','PingFang SC','Helvetica Neue',sans-serif;background:#2C2C2E}
+
+/* ====== Full-screen App Container ====== */
+.app{width:100%;height:100%;max-width:480px;margin:0 auto;position:relative;background:#F7F7F8;overflow:hidden;display:flex;flex-direction:column}
+@media(min-width:481px){.app{border-radius:0;box-shadow:none;margin:0 auto}}
+@media(min-width:768px){.app{max-width:420px;border-radius:40px;margin:20px auto;height:calc(100% - 40px);box-shadow:0 20px 60px rgba(0,0,0,0.3)}}
+
+/* ====== Login ====== */
+.login{position:absolute;inset:0;z-index:200;background:linear-gradient(135deg,#E84D8A,#5BC0DE);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s,transform .5s;padding:clamp(24px,6vw,48px)}
+.login.hide{opacity:0;transform:scale(.9);pointer-events:none}
+.login-logo{width:clamp(56px,10vw,80px);height:clamp(56px,10vw,80px);background:rgba(255,255,255,.2);border-radius:clamp(14px,3vw,24px);display:flex;align-items:center;justify-content:center;margin-bottom:clamp(12px,2vw,20px)}
+.login-logo span{font-size:clamp(28px,5vw,40px);font-weight:700;color:#FFF}
+.login-title{font-size:clamp(24px,4.5vw,32px);font-weight:700;color:#FFF}
+.login-sub{font-size:clamp(12px,2vw,14px);color:rgba(255,255,255,.7);margin-bottom:clamp(16px,3vw,24px)}
+.login-input{width:100%;max-width:360px;background:rgba(255,255,255,.15);border:none;border-radius:clamp(12px,2.5vw,18px);padding:clamp(12px,2.5vw,16px) 16px;font-size:clamp(14px,2.5vw,16px);color:#FFF;outline:none;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);margin-bottom:10px}
+.login-input::placeholder{color:rgba(255,255,255,.5)}
+.login-btn{width:100%;max-width:360px;background:#FFF;border:none;border-radius:28px;padding:clamp(14px,2.5vw,18px);font-size:clamp(15px,2.5vw,18px);font-weight:700;color:#E84D8A;cursor:pointer;margin-top:8px;transition:transform .2s}
+.login-btn:active{transform:scale(.97)}
+.login-hint{font-size:clamp(10px,1.5vw,12px);color:rgba(255,255,255,.5);margin-top:16px;text-align:center}
+.login-error{font-size:clamp(11px,1.8vw,13px);color:#FFD700;margin-bottom:8px;display:none;text-align:center}
+.login-accounts{width:100%;max-width:360px;max-height:clamp(120px,25vw,180px);overflow-y:auto;background:rgba(255,255,255,.12);border-radius:clamp(12px,2.5vw,18px);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);margin-bottom:10px;padding:6px 0;display:none}
+.login-accounts::-webkit-scrollbar{width:3px}
+.login-accounts::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:3px}
+.login-account-item{padding:clamp(8px,1.8vw,12px) clamp(14px,2.5vw,18px);color:rgba(255,255,255,.85);font-size:clamp(12px,2.2vw,14px);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .15s}
+.login-account-item:active,.login-account-item:hover{background:rgba(255,255,255,.15)}
+.login-account-item .ac-label{font-weight:500}
+.login-account-item .ac-hint{font-size:clamp(9px,1.5vw,11px);color:rgba(255,255,255,.4)}
+.login-toggle-list{background:transparent;border:1px solid rgba(255,255,255,.3);border-radius:16px;padding:clamp(4px,1vw,6px) clamp(12px,2.2vw,16px);font-size:clamp(10px,1.8vw,12px);color:rgba(255,255,255,.7);cursor:pointer;margin-bottom:6px;transition:background .2s}
+.login-toggle-list:active{background:rgba(255,255,255,.1)}
+
+/* ====== App Screen ====== */
+.screen{width:100%;height:100%;display:flex;flex-direction:column;position:relative}
+
+/* ====== Pages ====== */
+.page{position:absolute;inset:0;display:none;flex-direction:column;background:#F7F7F8;overflow:hidden;-webkit-overflow-scrolling:touch}
+.page.active{display:flex;z-index:1}
+.page-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:env(safe-area-inset-bottom,0)}
+.page-scroll::-webkit-scrollbar{display:none}
+
+/* ====== Header ====== */
+.header{padding:clamp(12px,3vw,18px) clamp(16px,4vw,24px) clamp(10px,2vw,14px);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:8px}
+.logo-box{width:clamp(28px,5vw,36px);height:clamp(28px,5vw,36px);background:#E84D8A;border-radius:8px;flex-shrink:0}
+.app-name{font-size:clamp(18px,4vw,24px);font-weight:700;color:#2C2C2E}
+.header-right{display:flex;gap:clamp(10px,2.5vw,16px);align-items:center}
+.icon-btn{font-size:clamp(18px,3.5vw,22px);color:#8E8E93;cursor:pointer;background:none;border:none;padding:4px;transition:transform .15s;-webkit-touch-callout:none}
+.icon-btn:active{transform:scale(.85)}
+
+/* ====== Hero ====== */
+.hero{margin:0 clamp(16px,4vw,24px);background:linear-gradient(135deg,#E84D8A,#5BC0DE);border-radius:clamp(16px,3vw,24px);height:clamp(200px,40vw,300px);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hero-stickers{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:flex-start;padding:clamp(6px,1.5vw,12px);gap:clamp(10px,2vw,20px);opacity:.12;font-size:clamp(16px,3vw,24px);pointer-events:none;overflow:hidden}
+.hero-content{position:relative;z-index:1;text-align:center;padding:20px}
+.hero-content h1{font-size:clamp(28px,6vw,40px);font-weight:700;color:#FFF;margin:0 0 clamp(6px,1vw,10px)}
+.hero-content p{font-size:clamp(12px,2.2vw,14px);color:rgba(255,255,255,.85)}
+
+/* ====== Stats ====== */
+.stats-card{margin:clamp(12px,2.5vw,18px) clamp(16px,4vw,24px) 0;flex-shrink:0}
+.stats-card-inner{background:#FFF;border-radius:clamp(14px,2.5vw,18px);padding:clamp(16px,3vw,24px);text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.stats-num{font-size:clamp(24px,5vw,32px);font-weight:700;color:#E84D8A}
+.stats-label{font-size:clamp(11px,2vw,13px);color:#8E8E93;margin-top:4px}
+
+/* ====== About ====== */
+.about-section{margin:clamp(12px,2.5vw,18px) clamp(16px,4vw,24px) 0;flex-shrink:0}
+.about-title{font-size:clamp(16px,3.2vw,20px);font-weight:700;color:#2C2C2E;margin-bottom:clamp(10px,2vw,14px)}
+.about-card{background:#FFF;border-radius:clamp(14px,2.5vw,18px);padding:clamp(12px,2.5vw,18px);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.about-text{font-size:clamp(11px,2vw,13px);color:#3A3A3C;line-height:1.7;margin:0 0 10px}
+.about-text-gray{font-size:clamp(11px,2vw,13px);color:#8E8E93;line-height:1.7;margin:0 0 10px}
+.about-slogan-pink{font-size:clamp(12px,2.2vw,14px);font-weight:700;color:#E84D8A;text-align:center;margin:0 0 4px}
+.about-slogan-blue{font-size:clamp(12px,2.2vw,14px);font-weight:700;color:#5BC0DE;text-align:center;margin:0}
+
+/* ====== Tab Bar ====== */
+.tab-bar{padding:clamp(6px,1.5vw,10px) clamp(16px,4vw,24px) calc(clamp(8px,2vw,14px) + env(safe-area-inset-bottom,8px));flex-shrink:0;background:#F7F7F8}
+.tab-pill{background:#F2F2F3;border-radius:28px;padding:4px;display:flex}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:clamp(5px,1vw,8px) 0;border-radius:24px;cursor:pointer;transition:all .2s;border:none;background:transparent;-webkit-touch-callout:none}
+.tab-item:active{transform:scale(.93)}
+.tab-active{background:#E84D8A}
+.tab-active .tab-icon,.tab-active .tab-label{color:#FFF}
+.tab-icon{font-size:clamp(14px,3vw,18px);color:#8E8E93;margin-bottom:1px;line-height:1}
+.tab-label{font-size:clamp(8px,1.6vw,10px);color:#8E8E93;letter-spacing:.3px;font-weight:500}
+
+/* ====== Notification ====== */
+.notif-header{padding:clamp(12px,3vw,18px) clamp(16px,4vw,24px) clamp(6px,1.5vw,10px);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.back-btn{font-size:clamp(14px,2.8vw,17px);color:#E84D8A;cursor:pointer;border:none;background:none;font-weight:500;padding:4px 0;-webkit-touch-callout:none}
+.notif-title{font-size:clamp(16px,3.2vw,20px);font-weight:700;color:#2C2C2E}
+.notif-tabs{margin:clamp(6px,1.5vw,10px) clamp(16px,4vw,24px);flex-shrink:0}
+.notif-pill{background:#F2F2F3;border-radius:28px;padding:4px;display:flex}
+.notif-tab{flex:1;text-align:center;padding:clamp(5px,1vw,8px) 0;border-radius:24px;font-size:clamp(11px,2vw,13px);font-weight:500;cursor:pointer;border:none;background:transparent;color:#8E8E93;transition:all .2s}
+.notif-tab.active{background:#E84D8A;color:#FFF}
+.notif-list{padding:clamp(6px,1.5vw,10px) clamp(16px,4vw,24px) 0;flex:1;overflow-y:auto}
+.notif-item{background:#FFF;border-radius:clamp(14px,2.5vw,18px);padding:clamp(10px,2vw,14px);display:flex;align-items:center;gap:clamp(10px,2vw,14px);box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:8px}
+.notif-avatar{width:clamp(36px,7vw,44px);height:clamp(36px,7vw,44px);border-radius:50%;flex-shrink:0}
+.notif-text{flex:1;min-width:0}
+.notif-name{font-size:clamp(13px,2.3vw,15px);font-weight:700;color:#2C2C2E}
+.notif-msg{font-size:clamp(11px,2vw,13px);color:#8E8E93;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notif-time{font-size:clamp(10px,1.8vw,12px);color:#C7C7CC;flex-shrink:0}
+
+/* ====== Settings ====== */
+.settings-content{padding:clamp(6px,1.5vw,10px) clamp(16px,4vw,24px) 0;flex:1;overflow-y:auto}
+.settings-profile{background:#FFF;border-radius:clamp(16px,3vw,22px);padding:clamp(12px,2.5vw,16px);display:flex;align-items:center;gap:clamp(12px,2.5vw,16px);box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:10px}
+.settings-avatar{width:clamp(44px,9vw,56px);height:clamp(44px,9vw,56px);border-radius:50%;background:linear-gradient(135deg,#E84D8A,#5BC0DE);flex-shrink:0}
+.settings-info{flex:1;min-width:0}
+.settings-name{font-size:clamp(15px,3vw,19px);font-weight:700;color:#2C2C2E}
+.settings-bio{font-size:clamp(11px,2vw,13px);color:#8E8E93;margin-top:2px}
+.settings-arrow{font-size:clamp(20px,4vw,26px);color:#C7C7CC}
+.settings-group{background:#FFF;border-radius:clamp(14px,2.5vw,18px);overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:10px}
+.settings-item{display:flex;justify-content:space-between;align-items:center;padding:clamp(12px,2.5vw,16px) clamp(14px,2.5vw,18px);cursor:pointer;border-bottom:.5px solid #F2F2F3;transition:background .15s}
+.settings-item:last-child{border-bottom:none}
+.settings-item:active{background:#F5F5F5}
+.settings-item-label{font-size:clamp(13px,2.5vw,16px);color:#2C2C2E}
+.settings-logout{background:#FFF;border-radius:24px;padding:clamp(12px,2.5vw,16px);text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04);margin:16px 0;cursor:pointer;transition:background .15s}
+.settings-logout:active{background:#F5F5F5}
+.settings-logout span{font-size:clamp(13px,2.5vw,16px);color:#E84D8A}
+
+/* ====== Explore ====== */
+.explore-scroll{padding:0 clamp(16px,4vw,24px);flex:1;overflow-y:auto}
+.search-bar{background:#FFF;border-radius:clamp(18px,3.5vw,24px);padding:clamp(8px,2vw,12px) clamp(14px,2.5vw,18px);display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-top:0}
+.search-bar .si{font-size:clamp(14px,2.5vw,17px);color:#C7C7CC;flex-shrink:0}
+.search-bar input{flex:1;border:none;outline:none;font-size:clamp(12px,2.2vw,14px);color:#2C2C2E;background:transparent;min-width:0}
+.search-bar input::placeholder{color:#C7C7CC}
+.cat-tabs{display:flex;gap:8px;margin:clamp(10px,2vw,14px) 0;overflow-x:auto;padding-bottom:4px}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{padding:clamp(5px,1vw,8px) clamp(14px,2.5vw,18px);border-radius:16px;font-size:clamp(12px,2.2vw,14px);font-weight:500;cursor:pointer;white-space:nowrap;border:none;transition:all .2s}
+.cat-tab.active{background:#E84D8A;color:#FFF}
+.cat-tab:not(.active){background:#F2F2F3;color:#8E8E93}
+.section-title{font-size:clamp(15px,3vw,19px);font-weight:700;color:#2C2C2E;margin:clamp(12px,2.5vw,18px) 0 clamp(10px,2vw,14px)}
+.card-grid{display:flex;gap:clamp(8px,2vw,14px);margin-bottom:clamp(8px,2vw,14px)}
+.explore-card{flex:1;border-radius:clamp(14px,2.5vw,18px);height:clamp(160px,32vw,220px);display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(10px,2vw,14px);box-shadow:0 4px 10px rgba(0,0,0,.06)}
+.explore-card h4{font-size:clamp(12px,2.2vw,14px);font-weight:700;color:#FFF;margin-bottom:2px}
+.explore-card p{font-size:clamp(9px,1.6vw,11px);color:rgba(255,255,255,.7)}
+
+/* ====== Post ====== */
+.post-content{padding:0 clamp(16px,4vw,24px);flex:1;overflow-y:auto}
+.post-type-toggle{margin:clamp(10px,2vw,14px) 0;background:#F2F2F3;border-radius:18px;padding:4px;display:flex}
+.post-type-btn{flex:1;padding:clamp(7px,1.5vw,10px) 0;border-radius:14px;text-align:center;font-size:clamp(11px,2vw,13px);font-weight:500;cursor:pointer;border:none;background:transparent;color:#8E8E93;transition:all .2s}
+.post-type-btn.active{background:#E84D8A;color:#FFF}
+.photo-area{background:#E5E5EA;border-radius:clamp(16px,3vw,22px);height:clamp(200px,40vw,320px);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#B0B0B5;cursor:pointer}
+.photo-area .pa-icon{font-size:clamp(36px,8vw,52px);margin-bottom:8px}
+.photo-area .pa-text{font-size:clamp(12px,2.5vw,15px)}
+.tool-row{display:flex;gap:10px;margin:clamp(10px,2vw,14px) 0;flex-wrap:wrap}
+.tool-btn{display:flex;align-items:center;gap:6px;padding:clamp(7px,1.5vw,10px) clamp(16px,3vw,20px);border-radius:20px;border:none;font-size:clamp(12px,2.2vw,14px);font-weight:500;cursor:pointer;transition:transform .15s}
+.tool-btn:active{transform:scale(.93)}
+.caption-input{background:#FFF;border-radius:24px;border:1px solid #E5E5EA;padding:clamp(12px,2.5vw,16px) clamp(16px,3vw,22px);font-size:clamp(13px,2.3vw,15px);outline:none;width:100%;margin-bottom:12px;color:#2C2C2E}
+.caption-input::placeholder{color:#C7C7CC}
+.post-btn{width:100%;background:linear-gradient(135deg,#E84D8A,#5BC0DE);border:none;border-radius:28px;padding:clamp(14px,2.5vw,18px);font-size:clamp(15px,2.8vw,18px);font-weight:700;color:#FFF;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 16px rgba(232,77,138,.3);transition:transform .15s}
+.post-btn:active{transform:scale(.97)}
+.text-compose{background:#FFF;border-radius:clamp(14px,2.5vw,18px);border:1px solid #E5E5EA;padding:clamp(10px,2vw,14px) clamp(14px,2.5vw,18px);margin-bottom:12px}
+.text-compose textarea{width:100%;border:none;outline:none;font-size:clamp(13px,2.3vw,15px);color:#2C2C2E;resize:none;min-height:clamp(60px,12vw,90px);font-family:inherit;background:transparent}
+.text-compose textarea::placeholder{color:#C7C7CC}
+.char-count{text-align:right;font-size:clamp(10px,1.8vw,12px);color:#C7C7CC;margin-top:4px}
+
+/* ====== Profile Stats Row ====== */
+.profile-stats{display:flex;gap:6px;margin:10px 0}
+.profile-stat{flex:1;background:#FFF;border-radius:clamp(10px,2vw,14px);padding:clamp(10px,2vw,16px);text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.03)}
+.profile-stat .num{font-size:clamp(16px,3.2vw,20px);font-weight:700;color:#E84D8A;margin-bottom:2px}
+.profile-stat .num.blue{color:#5BC0DE}
+.profile-stat .lbl{font-size:clamp(9px,1.6vw,11px);color:#8E8E93}
+
+/* ====== Explore Header ====== */
+.explore-header{font-size:clamp(18px,4vw,24px);font-weight:700;color:#2C2C2E}
+.explore-avatar{width:clamp(24px,5vw,30px);height:clamp(24px,5vw,30px);border-radius:50%;background:linear-gradient(135deg,#E84D8A,#5BC0DE);flex-shrink:0}
+.post-header-title{font-size:clamp(16px,3.2vw,20px);font-weight:700;color:#2C2C2E}
+.post-header-more{font-size:clamp(20px,4vw,26px);color:#C7C7CC}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- ====== Login ====== -->
+<div class="login" id="loginPage">
+  <div class="login-logo"><span>芙</span></div>
+  <div class="login-title">芙pop</div>
+  <div class="login-sub">米哈游社区城市打卡</div>
+  <input class="login-input" id="loginUser" type="text" placeholder="用户名" autocomplete="off">
+  <input class="login-input" id="loginPass" type="password" placeholder="密码" autocomplete="off">
+  <div class="login-error" id="loginError">用户名或密码错误，请重试</div>
+  <div class="login-accounts" id="loginAccounts"></div>
+  <button class="login-toggle-list" id="toggleAccountList" onclick="toggleAccountList()">📋 选择测试账号</button>
+  <button class="login-btn" onclick="login()">进入芙pop</button>
+  <div class="login-hint" id="loginHint">💡 点击上方按钮选择测试账号，或直接输入用户名和密码登录</div>
+</div>
+
+<!-- ====== Main Screen ====== -->
+<div class="screen" id="appScreen" style="display:none">
+
+  <!-- Page: Home -->
+  <div class="page active" id="pageHome">
+    <div class="header">
+      <div class="header-left">
+        <div class="logo-box"></div>
+        <span class="app-name">芙pop</span>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" onclick="switchPage('pageExplore')">🔍</button>
+        <button class="icon-btn" onclick="switchPage('pageNotif')">🔔</button>
+        <button class="icon-btn" onclick="switchPage('pageSettings')">⚙️</button>
+      </div>
+    </div>
+    <div class="page-scroll">
+      <div class="hero">
+        <div class="hero-stickers">🐱🫠🎀🥹🐾🌸✨💫🐱🫠🥹🐾🌸✨</div>
+        <div class="hero-content">
+          <h1>芙士德</h1>
+          <p>源于热爱，记录游戏世界</p>
+        </div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-inner"><div class="stats-num">1,247</div><div class="stats-label">发布内容</div></div>
+      </div>
+      <div class="about-section">
+        <div class="about-title">关于芙士德</div>
+        <div class="about-card">
+          <p class="about-text">这一切，都起源于一次社群交汇——知乎的"芙"与B站的"羡"，两位在各自平台都有很多受众。机缘巧合下，两边社群因兴趣相投（玩电子宠物）而逐渐走近。这一切建立的具体时间是在2025年的冬天。</p>
+          <p class="about-text">这里不执着于单一话题，而是一个自由分享心得、追踪社区动态、探讨行业热点的综合性角落。无论你是硬核玩家、吃瓜群众，还是对二游生态感兴趣的路人，都能在这里找到同好。</p>
+          <p class="about-text-gray">当然，如果是立场极端、喜好拉踩的朋友，建议绕道；若执意前来引战，后果自负哦。</p>
+          <p class="about-text">频道的生命力早已融入每一位成员的日常讨论中。这里没有严格的阵营划分，只有对游戏的热爱与对有趣内容的敏锐嗅觉。欢迎加入，一起记录这个瞬息万变的游戏世界。</p>
+          <div class="about-slogan-pink">为了更好的社区，为了我们更好的电子宠物！</div>
+          <div class="about-slogan-blue">为了更好的爱！为了更好的生活！</div>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-pill">
+        <div class="tab-item tab-active" onclick="switchPage('pageHome')"><span class="tab-icon">◉</span><span class="tab-label">首页</span></div>
+        <div class="tab-item" onclick="switchPage('pageExplore')"><span class="tab-icon">◎</span><span class="tab-label">探索</span></div>
+        <div class="tab-item" onclick="switchPage('pagePost')"><span class="tab-icon">✧</span><span class="tab-label">发布</span></div>
+        <div class="tab-item" onclick="switchPage('pageProfile')"><span class="tab-icon">○</span><span class="tab-label">我的</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: Explore -->
+  <div class="page" id="pageExplore">
+    <div class="header">
+      <span class="explore-header">探索</span>
+      <div class="explore-avatar"></div>
+    </div>
+    <div class="explore-scroll">
+      <div class="search-bar">
+        <span class="si">🔍</span>
+        <input type="text" placeholder="搜索社区、打卡、话题……" id="searchInput" oninput="searchContent(this.value)">
+      </div>
+      <div class="cat-tabs">
+        <button class="cat-tab active" onclick="filterCat(this,'推荐')">推荐</button>
+        <button class="cat-tab" onclick="filterCat(this,'游戏')">游戏</button>
+        <button class="cat-tab" onclick="filterCat(this,'社区')">社区</button>
+      </div>
+      <div class="section-title" id="sectionTitle">热门推荐</div>
+      <div id="exploreGrid">
+        <div class="card-grid">
+          <div class="explore-card" style="background:linear-gradient(180deg,#E84D8A,rgba(232,77,138,.3))">
+            <h4>原神·枫丹打卡合集</h4><p>12篇内容</p>
+          </div>
+          <div class="explore-card" style="background:linear-gradient(180deg,#5BC0DE,rgba(91,192,222,.3))">
+            <h4>星穹铁道·仙舟打卡</h4><p>8篇内容</p>
+          </div>
+        </div>
+        <div class="card-grid">
+          <div class="explore-card" style="background:linear-gradient(180deg,#E84D8A,rgba(128,128,140,.3))">
+            <h4>绝区零·新艾利都</h4><p>5篇内容</p>
+          </div>
+          <div class="explore-card" style="background:linear-gradient(180deg,#5BC0DE,rgba(128,128,140,.3))">
+            <h4>未定·城市漫游</h4><p>3篇内容</p>
+          </div>
+        </div>
+      </div>
+      <div id="searchResults" style="display:none">
+        <div class="section-title">搜索结果</div>
+        <div id="resultsList"></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-pill">
+        <div class="tab-item" onclick="switchPage('pageHome')"><span class="tab-icon">◉</span><span class="tab-label">首页</span></div>
+        <div class="tab-item tab-active" style="background:#5BC0DE"><span class="tab-icon" style="color:#FFF">◎</span><span class="tab-label" style="color:#FFF">探索</span></div>
+        <div class="tab-item" onclick="switchPage('pagePost')"><span class="tab-icon">✧</span><span class="tab-label">发布</span></div>
+        <div class="tab-item" onclick="switchPage('pageProfile')"><span class="tab-icon">○</span><span class="tab-label">我的</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: Post -->
+  <div class="page" id="pagePost">
+    <div class="header">
+      <button class="back-btn" onclick="switchPage('pageHome')">✕</button>
+      <span class="post-header-title">发布芙光</span>
+      <span class="post-header-more">⋯</span>
+    </div>
+    <div class="post-content">
+      <div class="post-type-toggle">
+        <button class="post-type-btn active" onclick="togglePostMode(this,'photo')">◉ 照片发布</button>
+        <button class="post-type-btn" onclick="togglePostMode(this,'text')">✎ 文字随想</button>
+      </div>
+      <div id="photoMode">
+        <div class="photo-area" onclick="document.getElementById('photoInput').click()">
+          <span class="pa-icon">☁</span>
+          <span class="pa-text">点击从相册选择照片</span>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+        <div id="photoPreview" style="display:none;margin-top:10px">
+          <img id="previewImg" style="width:100%;border-radius:16px;max-height:300px;object-fit:cover">
+        </div>
+      </div>
+      <div id="textMode" style="display:none">
+        <div class="text-compose">
+          <textarea placeholder="这一刻的所思所想……" oninput="updateCount(this)"></textarea>
+          <div class="char-count"><span id="charCount">0</span>/500</div>
+        </div>
+      </div>
+      <button class="post-btn" onclick="postContent()">✦ 发布芙光</button>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-pill">
+        <div class="tab-item" onclick="switchPage('pageHome')"><span class="tab-icon">◉</span><span class="tab-label">首页</span></div>
+        <div class="tab-item" onclick="switchPage('pageExplore')"><span class="tab-icon">◎</span><span class="tab-label">探索</span></div>
+        <div class="tab-item tab-active" style="background:#5BC0DE"><span class="tab-icon" style="color:#FFF">✧</span><span class="tab-label" style="color:#FFF">发布</span></div>
+        <div class="tab-item" onclick="switchPage('pageProfile')"><span class="tab-icon">○</span><span class="tab-label">我的</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: Notification -->
+  <div class="page" id="pageNotif">
+    <div class="notif-header">
+      <button class="back-btn" onclick="switchPage('pageHome')">〈 返回</button>
+      <span class="notif-title">通知中心</span>
+      <span style="width:clamp(36px,8vw,48px)"></span>
+    </div>
+    <div class="notif-tabs">
+      <div class="notif-pill">
+        <button class="notif-tab active" onclick="filterNotif(this,'dm')">私信</button>
+        <button class="notif-tab" onclick="filterNotif(this,'comment')">评论</button>
+        <button class="notif-tab" onclick="filterNotif(this,'like')">点赞</button>
+        <button class="notif-tab" onclick="filterNotif(this,'at')">@我</button>
+      </div>
+    </div>
+    <div class="notif-list" id="notifList">
+      <div class="notif-item" data-type="dm">
+        <div class="notif-avatar" style="background:#8E8E93"></div>
+        <div class="notif-text"><div class="notif-name">系统通知</div><div class="notif-msg">你的打卡被收录至「上海」精选</div></div>
+        <div class="notif-time">3h</div>
+      </div>
+      <div class="notif-item" data-type="comment" style="display:none">
+        <div class="notif-avatar" style="background:#E84D8A"></div>
+        <div class="notif-text"><div class="notif-name">崩崩小圆帽</div><div class="notif-msg">评论了你的打卡「拍得好有感觉！」</div></div>
+        <div class="notif-time">30min</div>
+      </div>
+      <div class="notif-item" data-type="like" style="display:none">
+        <div class="notif-avatar" style="background:#5BC0DE"></div>
+        <div class="notif-text"><div class="notif-name">绝区零玩家</div><div class="notif-msg">赞了你的帖子「上海·外滩打卡」</div></div>
+        <div class="notif-time">1h</div>
+      </div>
+      <div class="notif-item" data-type="at" style="display:none">
+        <div class="notif-avatar" style="background:#8E8E93"></div>
+        <div class="notif-text"><div class="notif-name">旅行者阿空</div><div class="notif-msg">在「周末去哪拍」帖子中@了你</div></div>
+        <div class="notif-time">2h</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: Settings -->
+  <div class="page" id="pageSettings">
+    <div class="notif-header">
+      <button class="back-btn" onclick="switchPage('pageHome')">〈 返回</button>
+      <span class="notif-title">设置</span>
+      <span style="font-size:clamp(20px,4vw,26px);color:#8E8E93">⚙️</span>
+    </div>
+    <div class="settings-content">
+      <div class="settings-profile">
+        <div class="settings-avatar"></div>
+        <div class="settings-info"><div class="settings-name">芙士德</div><div class="settings-bio">米哈游社区｜城市打卡人</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+      <div class="settings-group">
+        <div class="settings-item" onclick="alert('📋 账号与安全设置')"><span class="settings-item-label">账号与安全</span><span style="font-size:clamp(18px,3.5vw,22px);color:#C7C7CC">›</span></div>
+        <div class="settings-item" onclick="alert('🔒 隐私设置')"><span class="settings-item-label">隐私设置</span><span style="font-size:clamp(18px,3.5vw,22px);color:#C7C7CC">›</span></div>
+        <div class="settings-item" onclick="alert('🔔 通知设置')"><span class="settings-item-label">通知设置</span><span style="font-size:clamp(18px,3.5vw,22px);color:#C7C7CC">›</span></div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-item" onclick="alert('⚙ 通用设置')"><span class="settings-item-label">通用设置</span><span style="font-size:clamp(18px,3.5vw,22px);color:#C7C7CC">›</span></div>
+        <div class="settings-item" onclick="alert('💾 存储空间')"><span class="settings-item-label">存储空间</span><span style="font-size:clamp(18px,3.5vw,22px);color:#C7C7CC">›</span></div>
+      </div>
+      <div class="settings-logout" onclick="logout()"><span>退出登录</span></div>
+    </div>
+  </div>
+
+  <!-- Page: Profile -->
+  <div class="page" id="pageProfile">
+    <div class="notif-header">
+      <button class="back-btn" onclick="switchPage('pageHome')">〈 返回</button>
+      <span class="notif-title">我的主页</span>
+      <span style="font-size:clamp(18px,3.5vw,24px);color:#8E8E93">⚙</span>
+    </div>
+    <div class="settings-content">
+      <div class="settings-profile">
+        <div class="settings-avatar"></div>
+        <div class="settings-info"><div class="settings-name">芙士德</div><div class="settings-bio">米哈游社区｜城市打卡人</div></div>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="num">1,247</div><div class="lbl">内容</div></div>
+        <div class="profile-stat"><div class="num blue">892</div><div class="lbl">关注</div></div>
+        <div class="profile-stat"><div class="num">3.2k</div><div class="lbl">获赞</div></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-pill">
+        <div class="tab-item" onclick="switchPage('pageHome')"><span class="tab-icon">◉</span><span class="tab-label">首页</span></div>
+        <div class="tab-item" onclick="switchPage('pageExplore')"><span class="tab-icon">◎</span><span class="tab-label">探索</span></div>
+        <div class="tab-item" onclick="switchPage('pagePost')"><span class="tab-icon">✧</span><span class="tab-label">发布</span></div>
+        <div class="tab-item tab-active"><span class="tab-icon" style="color:#FFF">○</span><span class="tab-label" style="color:#FFF">我的</span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /screen -->
+</div><!-- /app -->
+
+<script>
+// ====== Test Accounts ======
+var testAccounts=[
+  {user:'芙士德',pass:'fupop2025',name:'芙士德',bio:'米哈游社区｜城市打卡人',color:'#E84D8A',stats:{posts:1247,following:892,likes:'3.2k'}},
+  {user:'旅行者空',pass:'kong2025',name:'旅行者·空',bio:'提瓦特大陆漫游中',color:'#5BC0DE',stats:{posts:856,following:634,likes:'2.1k'}},
+  {user:'刻晴老婆',pass:'keqing2025',name:'刻晴的大腿挂件',bio:'璃月港常驻居民',color:'#B07CD8',stats:{posts:623,following:421,likes:'1.8k'}},
+  {user:'原神启动',pass:'genshin2025',name:'原神启冻',bio:'每日委托已完成√',color:'#53B883',stats:{posts:2048,following:1567,likes:'6.7k'}},
+  {user:'星穹铁道',pass:'starrail2025',name:'星穹列车长',bio:'开往匹诺康尼',color:'#F5A623',stats:{posts:1135,following:789,likes:'4.5k'}},
+  {user:'绝区零',pass:'zenless2025',name:'绳匠小零',bio:'新艾利都探险中',color:'#E84D8A',stats:{posts:412,following:298,likes:'980'}},
+  {user:'崩坏三',pass:'honkai2025',name:'休伯利安舰长',bio:'为世界上所有的美好而战',color:'#5BC0DE',stats:{posts:789,following:523,likes:'3.0k'}},
+  {user:'米游社玩家',pass:'miyoushe2025',name:'米游社小萌新',bio:'今天也在努力打卡！',color:'#B07CD8',stats:{posts:234,following:167,likes:'567'}}
+];
+var currentUser=null;
+
+// ====== Login ======
+function populateAccountList(){
+  var el=document.getElementById('loginAccounts');
+  el.innerHTML='';
+  testAccounts.forEach(function(a){
+    var d=document.createElement('div');
+    d.className='login-account-item';
+    d.onclick=function(){selectAccount(a.user)};
+    d.innerHTML='<span class="ac-label">'+a.user+'</span><span class="ac-hint">••••••</span>';
+    el.appendChild(d)
+  })
+}
+function toggleAccountList(){
+  var el=document.getElementById('loginAccounts');
+  if(el.style.display==='block'){
+    el.style.display='none'
+  }else{
+    populateAccountList();
+    el.style.display='block';
+    el.scrollTop=0
+  }
+}
+function selectAccount(u){
+  var acc=testAccounts.find(function(a){return a.user===u});
+  if(acc){
+    document.getElementById('loginUser').value=acc.user;
+    document.getElementById('loginPass').value=acc.pass;
+    document.getElementById('loginAccounts').style.display='none';
+    document.getElementById('loginError').style.display='none';
+    document.getElementById('loginHint').textContent='✅ 已选择：'+acc.user+'，点击"进入芙pop"立即体验'
+  }
+}
+function login(){
+  var u=document.getElementById('loginUser').value.trim();
+  var p=document.getElementById('loginPass').value.trim();
+  var acc=testAccounts.find(function(a){return a.user===u&&a.pass===p});
+  if(!acc){
+    document.getElementById('loginError').style.display='block';
+    return
+  }
+  document.getElementById('loginError').style.display='none';
+  currentUser=acc;
+  updateUserUI();
+  document.getElementById('loginPage').classList.add('hide');
+  document.getElementById('appScreen').style.display='flex';
+  // Show welcome toast
+  setTimeout(function(){alert('👋 欢迎回来，'+currentUser.name+'！')},300)
+}
+function logout(){
+  if(confirm('确定退出登录吗？')){
+    currentUser=null;
+    document.getElementById('loginUser').value='';
+    document.getElementById('loginPass').value='';
+    document.getElementById('loginPage').classList.remove('hide');
+    document.getElementById('appScreen').style.display='none';
+    document.getElementById('loginHint').textContent='💡 点击上方按钮选择测试账号，或直接输入用户名和密码登录'
+  }
+}
+function updateUserUI(){
+  if(!currentUser)return;
+  // Settings page
+  document.querySelector('#pageSettings .settings-name').textContent=currentUser.name;
+  document.querySelector('#pageSettings .settings-bio').textContent=currentUser.bio;
+  // Profile page
+  document.querySelector('#pageProfile .settings-name').textContent=currentUser.name;
+  document.querySelector('#pageProfile .settings-bio').textContent=currentUser.bio;
+  document.querySelector('#pageProfile .profile-stat .num').textContent=currentUser.stats.posts.toLocaleString();
+  document.querySelector('#pageProfile .profile-stat .num.blue').textContent=currentUser.stats.following.toLocaleString();
+  var statNums=document.querySelectorAll('#pageProfile .profile-stat .num');
+  statNums[2].textContent=currentUser.stats.likes;
+  // Avatar colors
+  var avatars=document.querySelectorAll('.settings-avatar');
+  avatars.forEach(function(a){a.style.background='linear-gradient(135deg,'+currentUser.color+',#5BC0DE)'})
+}
+
+function switchPage(id){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  var el=document.getElementById(id);
+  el.classList.add('active');
+  var s=el.querySelector('.page-scroll,.explore-scroll,.post-content,.notif-list,.settings-content');
+  if(s)s.scrollTop=0;
+  // Hide tab-bar on settings page
+  var tb=el.querySelector('.tab-bar');
+  if(tb)tb.style.display='flex'
+}
+function filterNotif(el,type){
+  document.querySelectorAll('.notif-tab').forEach(function(t){t.classList.remove('active')});
+  el.classList.add('active');
+  document.querySelectorAll('.notif-item').forEach(function(i){
+    i.style.display=i.dataset.type===type?'flex':'none'
+  })
+}
+function togglePostMode(el,mode){
+  document.querySelectorAll('.post-type-btn').forEach(function(b){b.classList.remove('active')});
+  el.classList.add('active');
+  document.getElementById('photoMode').style.display=mode==='photo'?'block':'none';
+  document.getElementById('textMode').style.display=mode==='text'?'block':'none';
+  if(mode==='photo'){document.getElementById('photoPreview').style.display='none'}
+}
+function updateCount(t){
+  document.getElementById('charCount').textContent=t.value.length
+}
+function filterCat(el){
+  document.querySelectorAll('.cat-tab').forEach(function(t){t.classList.remove('active')});
+  el.classList.add('active')
+}
+function searchContent(q){
+  var g=document.getElementById('exploreGrid'),r=document.getElementById('searchResults'),l=document.getElementById('resultsList');
+  if(q.trim()){
+    g.style.display='none';r.style.display='block';document.getElementById('sectionTitle').style.display='none';
+    l.innerHTML='<div class="notif-item"><div class="notif-text"><div class="notif-name">关于 "'+q+'"</div><div class="notif-msg">搜索功能已就绪，等待内容填充</div></div></div>'
+  }else{
+    g.style.display='block';r.style.display='none';document.getElementById('sectionTitle').style.display='block'
+  }
+}
+function previewPhoto(input){
+  if(input.files&&input.files[0]){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      document.getElementById('previewImg').src=e.target.result;
+      document.getElementById('photoPreview').style.display='block';
+      document.querySelector('.photo-area .pa-text').textContent='重新选择照片'
+    };
+    reader.readAsDataURL(input.files[0])
+  }
+}
+function postContent(){
+  var msg='';
+  var mode=document.querySelector('.post-type-btn.active');
+  if(mode&&mode.textContent.includes('照片')){
+    var img=document.getElementById('previewImg');
+    if(img&&img.src&&img.src!==''){
+      msg+='📷 照片已选择'
+    }else{
+      alert('⚠️ 请先选择照片');
+      return
+    }
+  }
+  var ta=document.querySelector('#textMode textarea');
+  if(ta&&ta.value.trim()){
+    msg+=(msg?' + ':'')+'✏️ "'+ta.value.substring(0,20)+(ta.value.length>20?'...':'')+'"'
+  }
+  if(!msg){
+    if(document.getElementById('textMode').style.display!=='none'){
+      alert('⚠️ 请先输入文字');
+      return
+    }
+    alert('⚠️ 请先选择照片');
+    return
+  }
+  alert('🎉 发布成功！\n'+msg)
+}
+</script>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}
+</script>
+</body>
+</html>

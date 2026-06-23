@@ -1,0 +1,18 @@
+{
+  "packageName": "com.fupop.app",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "launcherName": "芙pop",
+  "appName": "芙pop",
+  "appUrl": "https://9ca109cd9892499cb8718c25298d991d.app.codebuddy.work",
+  "host": "9ca109cd9892499cb8718c25298d991d.app.codebuddy.work",
+  "orientation": "portrait",
+  "display": "standalone",
+  "iconUrl": "https://9ca109cd9892499cb8718c25298d991d.app.codebuddy.work/icons/icon-512.svg",
+  "maskableIconUrl": "https://9ca109cd9892499cb8718c25298d991d.app.codebuddy.work/icons/icon-512.svg",
+  "themeColor": "#E84D8A",
+  "backgroundColor": "#F7F7F8",
+  "fallbackType": "customtabs",
+  "enableNotifications": true,
+  "enableSiteSettingsShortcut": true
+}
