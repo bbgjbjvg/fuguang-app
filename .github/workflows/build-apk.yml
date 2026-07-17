@@ -36,7 +36,7 @@ jobs:
           # Run pwa2apk
           node bin/pwa2apk.js \
             --url https://9ca109cd9892499cb8718c25298d991d.app.codebuddy.work \
-            --name "芙光" \
+            --name "芙pop" \
             --package com.fupop.app \
             --color "#E84D8A" \
             --output $GITHUB_WORKSPACE/apk-output \
@@ -54,7 +54,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: 芙光-APK
+          name: 芙pop-APK
           path: |
             ${{ github.workspace }}/apk-output/*.apk
             ${{ github.workspace }}/apk-output/*.aab
