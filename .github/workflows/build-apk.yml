@@ -31,6 +31,10 @@ jobs:
           git clone https://github.com/Tonihj77-T/pwa2apk.git /tmp/pwa2apk
           cd /tmp/pwa2apk
           npm install
+          
+          # Fix Gradle compatibility issue
+          sed -i '/android.useAndroidX=true/a android.dependencyResolutionAtConfigurationTime=false' src/lib/project-builder.js
+          
           mkdir -p $GITHUB_WORKSPACE/apk-output
 
           # Run pwa2apk
