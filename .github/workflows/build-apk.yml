@@ -49,6 +49,7 @@ jobs:
           
           # Fix Gradle compatibility and build manually
           cd $GITHUB_WORKSPACE/apk-output/android-project
+          sed -i 's|gradle-.*-bin.zip|gradle-8.5-bin.zip|' gradle/wrapper/gradle-wrapper.properties
           printf '\nandroid.dependencyResolutionAtConfigurationTime=false\n' >> gradle.properties
           ./gradlew assembleRelease --no-daemon
           
