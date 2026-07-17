@@ -1,16 +1,16 @@
 var CACHE_NAME = 'fuguang-v1';
 var urlsToCache = [
-  '/index.html',
-  '/manifest.json',
-  '/pwa-assets/icons/icon-48.svg',
-  '/pwa-assets/icons/icon-72.svg',
-  '/pwa-assets/icons/icon-96.svg',
-  '/pwa-assets/icons/icon-128.svg',
-  '/pwa-assets/icons/icon-144.svg',
-  '/pwa-assets/icons/icon-152.svg',
-  '/pwa-assets/icons/icon-192.svg',
-  '/pwa-assets/icons/icon-384.svg',
-  '/pwa-assets/icons/icon-512.svg'
+  'index.html',
+  'manifest.json',
+  'icons/icon-48.svg',
+  'icons/icon-72.svg',
+  'icons/icon-96.svg',
+  'icons/icon-128.svg',
+  'icons/icon-144.svg',
+  'icons/icon-152.svg',
+  'icons/icon-192.svg',
+  'icons/icon-384.svg',
+  'icons/icon-512.svg'
 ];
 
 self.addEventListener('install', function(event) {
