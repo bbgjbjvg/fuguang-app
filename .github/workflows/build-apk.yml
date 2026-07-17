@@ -35,9 +35,9 @@ jobs:
 
           # Run pwa2apk
           node bin/pwa2apk.js \
-            --url https://bbgjbjvg.github.io/fupop-app \
+            --url https://bbgjbjvg.github.io/fuguang-app \
             --name "芙光" \
-            --package com.fupop.app \
+            --package com.fuguang.app \
             --color "#E84D8A" \
             --output $GITHUB_WORKSPACE/apk-output \
             --display standalone \
