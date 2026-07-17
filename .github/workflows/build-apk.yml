@@ -49,7 +49,7 @@ jobs:
           
           # Fix Gradle compatibility and build manually
           cd $GITHUB_WORKSPACE/apk-output/android-project
-          echo "android.dependencyResolutionAtConfigurationTime=false" >> gradle.properties
+          printf '\nandroid.dependencyResolutionAtConfigurationTime=false\n' >> gradle.properties
           ./gradlew assembleRelease --no-daemon
           
           # Collect APK
