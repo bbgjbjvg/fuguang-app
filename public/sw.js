@@ -1,4 +1,4 @@
-var CACHE_NAME = 'fupop-v1';
+var CACHE_NAME = 'fuguang-v1';
 var urlsToCache = [
   '/index.html',
   '/manifest.json',

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
-<title>芙pop</title>
+<title>芙光</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/svg+xml" href="/pwa-assets/icons/icon-192.svg">
 <link rel="apple-touch-icon" href="/pwa-assets/icons/icon-192.svg">
@@ -183,14 +183,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 <!-- ====== Login ====== -->
 <div class="login" id="loginPage">
   <div class="login-logo"><span>芙</span></div>
-  <div class="login-title">芙pop</div>
-  <div class="login-sub">米哈游社区城市打卡</div>
+  <div class="login-title">芙光</div>
+  <div class="login-sub">城市打卡社交</div>
   <input class="login-input" id="loginUser" type="text" placeholder="用户名" autocomplete="off">
   <input class="login-input" id="loginPass" type="password" placeholder="密码" autocomplete="off">
   <div class="login-error" id="loginError">用户名或密码错误，请重试</div>
   <div class="login-accounts" id="loginAccounts"></div>
   <button class="login-toggle-list" id="toggleAccountList" onclick="toggleAccountList()">📋 选择测试账号</button>
-  <button class="login-btn" onclick="login()">进入芙pop</button>
+  <button class="login-btn" onclick="login()">进入芙光</button>
   <div class="login-hint" id="loginHint">💡 点击上方按钮选择测试账号，或直接输入用户名和密码登录</div>
 </div>
 
@@ -202,7 +202,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
     <div class="header">
       <div class="header-left">
         <div class="logo-box"></div>
-        <span class="app-name">芙pop</span>
+        <span class="app-name">芙光</span>
       </div>
       <div class="header-right">
         <button class="icon-btn" onclick="switchPage('pageExplore')">🔍</button>
@@ -214,22 +214,22 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
       <div class="hero">
         <div class="hero-stickers">🐱🫠🎀🥹🐾🌸✨💫🐱🫠🥹🐾🌸✨</div>
         <div class="hero-content">
-          <h1>芙士德</h1>
-          <p>源于热爱，记录游戏世界</p>
+          <h1>芙光</h1>
+          <p>记录城市，分享生活</p>
         </div>
       </div>
       <div class="stats-card">
         <div class="stats-card-inner"><div class="stats-num">1,247</div><div class="stats-label">发布内容</div></div>
       </div>
       <div class="about-section">
-        <div class="about-title">关于芙士德</div>
+        <div class="about-title">关于芙光</div>
         <div class="about-card">
-          <p class="about-text">这一切，都起源于一次社群交汇——知乎的"芙"与B站的"羡"，两位在各自平台都有很多受众。机缘巧合下，两边社群因兴趣相投（玩电子宠物）而逐渐走近。这一切建立的具体时间是在2025年的冬天。</p>
-          <p class="about-text">这里不执着于单一话题，而是一个自由分享心得、追踪社区动态、探讨行业热点的综合性角落。无论你是硬核玩家、吃瓜群众，还是对二游生态感兴趣的路人，都能在这里找到同好。</p>
+          <p class="about-text">这一切，都起源于一次社群交汇——知乎的"芙"与B站的"羡"，两位在各自平台都有很多受众。机缘巧合下，两边社群因兴趣相投而逐渐走近。这一切建立的具体时间是在2025年的冬天。</p>
+          <p class="about-text">这里不执着于单一话题，而是一个自由分享心得、追踪社区动态、探讨行业热点的综合性角落。无论你是摄影达人、城市探索者，还是对生活记录感兴趣的路人，都能在这里找到同好。</p>
           <p class="about-text-gray">当然，如果是立场极端、喜好拉踩的朋友，建议绕道；若执意前来引战，后果自负哦。</p>
-          <p class="about-text">频道的生命力早已融入每一位成员的日常讨论中。这里没有严格的阵营划分，只有对游戏的热爱与对有趣内容的敏锐嗅觉。欢迎加入，一起记录这个瞬息万变的游戏世界。</p>
-          <div class="about-slogan-pink">为了更好的社区，为了我们更好的电子宠物！</div>
-          <div class="about-slogan-blue">为了更好的爱！为了更好的生活！</div>
+          <p class="about-text">频道的生命力早已融入每一位成员的日常讨论中。这里没有严格的阵营划分，只有对生活的热爱与对有趣内容的敏锐嗅觉。欢迎加入，一起记录这个瞬息万变的世界。</p>
+          <div class="about-slogan-pink">为了更好的社区，为了我们更好的生活！</div>
+          <div class="about-slogan-blue">记录每一刻，分享每一份感动！</div>
         </div>
       </div>
       <div style="height:10px"></div>
@@ -264,18 +264,18 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
       <div id="exploreGrid">
         <div class="card-grid">
           <div class="explore-card" style="background:linear-gradient(180deg,#E84D8A,rgba(232,77,138,.3))">
-            <h4>原神·枫丹打卡合集</h4><p>12篇内容</p>
+            <h4>城市打卡合集</h4><p>12篇内容</p>
           </div>
           <div class="explore-card" style="background:linear-gradient(180deg,#5BC0DE,rgba(91,192,222,.3))">
-            <h4>星穹铁道·仙舟打卡</h4><p>8篇内容</p>
+            <h4>美食探店合集</h4><p>8篇内容</p>
           </div>
         </div>
         <div class="card-grid">
           <div class="explore-card" style="background:linear-gradient(180deg,#E84D8A,rgba(128,128,140,.3))">
-            <h4>绝区零·新艾利都</h4><p>5篇内容</p>
+            <h4>街头摄影合集</h4><p>5篇内容</p>
           </div>
           <div class="explore-card" style="background:linear-gradient(180deg,#5BC0DE,rgba(128,128,140,.3))">
-            <h4>未定·城市漫游</h4><p>3篇内容</p>
+            <h4>旅行日记合集</h4><p>3篇内容</p>
           </div>
         </div>
       </div>
@@ -357,17 +357,17 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
       </div>
       <div class="notif-item" data-type="comment" style="display:none">
         <div class="notif-avatar" style="background:#E84D8A"></div>
-        <div class="notif-text"><div class="notif-name">崩崩小圆帽</div><div class="notif-msg">评论了你的打卡「拍得好有感觉！」</div></div>
+        <div class="notif-text"><div class="notif-name">摄影爱好者</div><div class="notif-msg">评论了你的打卡「拍得好有感觉！」</div></div>
         <div class="notif-time">30min</div>
       </div>
       <div class="notif-item" data-type="like" style="display:none">
         <div class="notif-avatar" style="background:#5BC0DE"></div>
-        <div class="notif-text"><div class="notif-name">绝区零玩家</div><div class="notif-msg">赞了你的帖子「上海·外滩打卡」</div></div>
+        <div class="notif-text"><div class="notif-name">城市探索者</div><div class="notif-msg">赞了你的帖子「上海·外滩打卡」</div></div>
         <div class="notif-time">1h</div>
       </div>
       <div class="notif-item" data-type="at" style="display:none">
         <div class="notif-avatar" style="background:#8E8E93"></div>
-        <div class="notif-text"><div class="notif-name">旅行者阿空</div><div class="notif-msg">在「周末去哪拍」帖子中@了你</div></div>
+        <div class="notif-text"><div class="notif-name">打卡达人小林</div><div class="notif-msg">在「周末去哪拍」帖子中@了你</div></div>
         <div class="notif-time">2h</div>
       </div>
     </div>
@@ -383,7 +383,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
     <div class="settings-content">
       <div class="settings-profile">
         <div class="settings-avatar"></div>
-        <div class="settings-info"><div class="settings-name">芙士德</div><div class="settings-bio">米哈游社区｜城市打卡人</div></div>
+        <div class="settings-info"><div class="settings-name">芙光</div><div class="settings-bio">城市打卡人</div></div>
         <span class="settings-arrow">›</span>
       </div>
       <div class="settings-group">
@@ -409,7 +409,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
     <div class="settings-content">
       <div class="settings-profile">
         <div class="settings-avatar"></div>
-        <div class="settings-info"><div class="settings-name">芙士德</div><div class="settings-bio">米哈游社区｜城市打卡人</div></div>
+        <div class="settings-info"><div class="settings-name">芙光</div><div class="settings-bio">城市打卡人</div></div>
       </div>
       <div class="profile-stats">
         <div class="profile-stat"><div class="num">1,247</div><div class="lbl">内容</div></div>
@@ -433,14 +433,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 <script>
 // ====== Test Accounts ======
 var testAccounts=[
-  {user:'芙士德',pass:'fupop2025',name:'芙士德',bio:'米哈游社区｜城市打卡人',color:'#E84D8A',stats:{posts:1247,following:892,likes:'3.2k'}},
-  {user:'旅行者空',pass:'kong2025',name:'旅行者·空',bio:'提瓦特大陆漫游中',color:'#5BC0DE',stats:{posts:856,following:634,likes:'2.1k'}},
-  {user:'刻晴老婆',pass:'keqing2025',name:'刻晴的大腿挂件',bio:'璃月港常驻居民',color:'#B07CD8',stats:{posts:623,following:421,likes:'1.8k'}},
-  {user:'原神启动',pass:'genshin2025',name:'原神启冻',bio:'每日委托已完成√',color:'#53B883',stats:{posts:2048,following:1567,likes:'6.7k'}},
-  {user:'星穹铁道',pass:'starrail2025',name:'星穹列车长',bio:'开往匹诺康尼',color:'#F5A623',stats:{posts:1135,following:789,likes:'4.5k'}},
-  {user:'绝区零',pass:'zenless2025',name:'绳匠小零',bio:'新艾利都探险中',color:'#E84D8A',stats:{posts:412,following:298,likes:'980'}},
-  {user:'崩坏三',pass:'honkai2025',name:'休伯利安舰长',bio:'为世界上所有的美好而战',color:'#5BC0DE',stats:{posts:789,following:523,likes:'3.0k'}},
-  {user:'米游社玩家',pass:'miyoushe2025',name:'米游社小萌新',bio:'今天也在努力打卡！',color:'#B07CD8',stats:{posts:234,following:167,likes:'567'}}
+  {user:'芙光',pass:'fuguang2025',name:'芙光',bio:'城市打卡人',color:'#E84D8A',stats:{posts:1247,following:892,likes:'3.2k'}},
+  {user:'城市漫游者',pass:'city2025',name:'城市漫游者',bio:'走遍每一条街巷',color:'#5BC0DE',stats:{posts:856,following:634,likes:'2.1k'}},
+  {user:'摄影达人',pass:'photo2025',name:'摄影达人小陈',bio:'用镜头记录生活',color:'#B07CD8',stats:{posts:623,following:421,likes:'1.8k'}},
+  {user:'美食探店',pass:'foodie2025',name:'美食探店日记',bio:'今天吃什么呢？',color:'#53B883',stats:{posts:2048,following:1567,likes:'6.7k'}},
+  {user:'旅行日记',pass:'travel2025',name:'旅行者日记',bio:'下一站去哪里？',color:'#F5A623',stats:{posts:1135,following:789,likes:'4.5k'}},
+  {user:'街拍爱好者',pass:'street2025',name:'街拍爱好者',bio:'捕捉城市瞬间',color:'#E84D8A',stats:{posts:412,following:298,likes:'980'}},
+  {user:'生活记录者',pass:'life2025',name:'生活记录者',bio:'记录日常美好',color:'#5BC0DE',stats:{posts:789,following:523,likes:'3.0k'}},
+  {user:'打卡小萌新',pass:'newbie2025',name:'打卡小萌新',bio:'今天也在努力打卡！',color:'#B07CD8',stats:{posts:234,following:167,likes:'567'}}
 ];
 var currentUser=null;
 
@@ -473,7 +473,7 @@ function selectAccount(u){
     document.getElementById('loginPass').value=acc.pass;
     document.getElementById('loginAccounts').style.display='none';
     document.getElementById('loginError').style.display='none';
-    document.getElementById('loginHint').textContent='✅ 已选择：'+acc.user+'，点击"进入芙pop"立即体验'
+    document.getElementById('loginHint').textContent='✅ 已选择：'+acc.user+'，点击"进入芙光"立即体验'
   }
 }
 function login(){

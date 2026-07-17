@@ -1,7 +1,7 @@
 {
-  "name": "芙pop",
-  "short_name": "芙pop",
-  "description": "米哈游社区城市打卡社交App",
+  "name": "芙光",
+  "short_name": "芙光",
+  "description": "城市打卡社交App",
   "start_url": "/index.html",
   "display": "standalone",
   "orientation": "portrait",
