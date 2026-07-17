@@ -36,16 +36,16 @@ jobs:
           # Install bubblewrap
           npm install -g @bubblewrap/cli
           
-          # Init TWA project (pipe answers to prompts)
+          # Init TWA project (heredoc answers to prompts)
           cd $GITHUB_WORKSPACE
           mkdir -p twa && cd twa
-          printf '%s\n%s\n%s\n%s\n%s\n' \
-            "y" \
-            "$GITHUB_WORKSPACE/release.keystore" \
-            "android" \
-            "upload" \
-            "android" \
-            | bubblewrap init --manifest https://bbgjbjvg.github.io/fuguang-app/manifest.json
+          bubblewrap init --manifest https://bbgjbjvg.github.io/fuguang-app/manifest.json << ANSWERS
+y
+$GITHUB_WORKSPACE/release.keystore
+android
+upload
+android
+ANSWERS
           
           # Build
           bubblewrap build
