@@ -33,7 +33,12 @@ jobs:
           npm install
           
           # Fix Gradle compatibility issue
-          sed -i '/android.useAndroidX=true/a android.dependencyResolutionAtConfigurationTime=false' src/lib/project-builder.js
+          python3 -c "
+p='src/lib/project-builder.js'
+with open(p) as f: c=f.read()
+c=c.replace('android.useAndroidX=true','android.useAndroidX=true\\nandroid.dependencyResolutionAtConfigurationTime=false')
+with open(p,'w') as f: f.write(c)
+"
           
           mkdir -p $GITHUB_WORKSPACE/apk-output
 
