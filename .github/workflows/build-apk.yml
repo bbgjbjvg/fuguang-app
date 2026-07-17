@@ -22,40 +22,38 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install and run pwa2apk
+      - name: Build APK with Bubblewrap
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: |
-          # Clone pwa2apk
-          git clone https://github.com/Tonihj77-T/pwa2apk.git /tmp/pwa2apk
-          cd /tmp/pwa2apk
-          npm install
+          # Generate keystore
+          keytool -genkey -v -keystore $GITHUB_WORKSPACE/release.keystore \
+            -alias upload -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=芙光"
           
-          # Skip Gradle build step (will fix Gradle config manually)
-          sed -i 's/noBuild = false/noBuild = true/' src/index.js
+          # Install bubblewrap
+          npm install -g @bubblewrap/cli
           
-          mkdir -p $GITHUB_WORKSPACE/apk-output
-
-          # Run pwa2apk (generates project, skips Gradle build)
-          node bin/pwa2apk.js \
-            --url https://bbgjbjvg.github.io/fuguang-app \
-            --name "芙光" \
-            --package com.fuguang.app \
-            --color "#E84D8A" \
-            --output $GITHUB_WORKSPACE/apk-output \
-            --display standalone \
-            --app-version 1
+          # Init TWA project (pipe answers to prompts)
+          cd $GITHUB_WORKSPACE
+          mkdir -p twa && cd twa
+          printf '%s\n%s\n%s\n%s\n%s\n' \
+            "y" \
+            "$GITHUB_WORKSPACE/release.keystore" \
+            "android" \
+            "upload" \
+            "android" \
+            | bubblewrap init --manifest https://bbgjbjvg.github.io/fuguang-app/manifest.json
           
-          # Fix Gradle compatibility and build manually
-          cd $GITHUB_WORKSPACE/apk-output/android-project
-          sed -i 's|gradle-.*-bin.zip|gradle-8.5-bin.zip|' gradle/wrapper/gradle-wrapper.properties
-          printf '\nandroid.dependencyResolutionAtConfigurationTime=false\n' >> gradle.properties
-          ./gradlew assembleRelease --no-daemon
+          # Build
+          bubblewrap build
           
           # Collect APK
           mkdir -p $GITHUB_WORKSPACE/apk-output
-          find $GITHUB_WORKSPACE/apk-output -name "*.apk" -exec cp {} $GITHUB_WORKSPACE/apk-output/ \; || echo "No APK found"
+          find $GITHUB_WORKSPACE -name "*.apk" -path "*/release/*" -exec cp {} $GITHUB_WORKSPACE/apk-output/ \; || echo "No APK found"
+          ls -la $GITHUB_WORKSPACE/apk-output/
 
       - name: List all APK files
         run: |
