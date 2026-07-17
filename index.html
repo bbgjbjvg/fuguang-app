@@ -525,9 +525,10 @@ function switchPage(id){
   el.classList.add('active');
   var s=el.querySelector('.page-scroll,.explore-scroll,.post-content,.notif-list,.settings-content');
   if(s)s.scrollTop=0;
-  // Hide tab-bar on settings page
   var tb=el.querySelector('.tab-bar');
-  if(tb)tb.style.display='flex'
+  if(tb)tb.style.display='flex';
+  // 每次切到个人主页或设置页时刷新用户数据，防止"夺舍"
+  if(id==='pageProfile'||id==='pageSettings'){updateUserUI()}
 }
 function filterNotif(el,type){
   document.querySelectorAll('.notif-tab').forEach(function(t){t.classList.remove('active')});
