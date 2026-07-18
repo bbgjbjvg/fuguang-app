@@ -1,4 +1,4 @@
-var CACHE_NAME = 'fuguang-v1';
+var CACHE_NAME = 'fuguang-v2';
 var urlsToCache = [
   'index.html',
   'manifest.json',
@@ -22,6 +22,22 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
+  // HTML: stale-while-revalidate (always get latest)
+  if (event.request.url.endsWith('.html') || event.request.url.endsWith('/') || event.request.url.indexOf('.html?') > -1) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(function(cache) {
+        return cache.match(event.request).then(function(cached) {
+          var fetchPromise = fetch(event.request).then(function(networkResponse) {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          });
+          return cached || fetchPromise;
+        });
+      })
+    );
+    return;
+  }
+  // Static assets: cache-first
   event.respondWith(
     caches.match(event.request).then(function(response) {
       return response || fetch(event.request);
