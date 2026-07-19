@@ -1,6 +1,6 @@
-var CACHE_NAME = 'fuguang-v2';
+var CACHE_NAME = 'fuguang-v3';
+// Only pre-cache static assets (not HTML, to avoid old SW poisoning the cache)
 var urlsToCache = [
-  'index.html',
   'manifest.json',
   'icons/icon-48.svg',
   'icons/icon-72.svg',
@@ -13,7 +13,9 @@ var urlsToCache = [
   'icons/icon-512.svg'
 ];
 
+// Activate immediately, don't wait for old SW to release
 self.addEventListener('install', function(event) {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
       return cache.addAll(urlsToCache);
@@ -22,17 +24,17 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
-  // HTML: stale-while-revalidate (always get latest)
+  // HTML: Network First (never serve stale HTML)
   if (event.request.url.endsWith('.html') || event.request.url.endsWith('/') || event.request.url.indexOf('.html?') > -1) {
     event.respondWith(
-      caches.open(CACHE_NAME).then(function(cache) {
-        return cache.match(event.request).then(function(cached) {
-          var fetchPromise = fetch(event.request).then(function(networkResponse) {
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          });
-          return cached || fetchPromise;
+      fetch(event.request).then(function(networkResponse) {
+        var cloned = networkResponse.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(event.request, cloned);
         });
+        return networkResponse;
+      }).catch(function() {
+        return caches.match(event.request);
       })
     );
     return;
@@ -46,15 +48,19 @@ self.addEventListener('fetch', function(event) {
 });
 
 self.addEventListener('activate', function(event) {
+  // Take control of all pages immediately
   event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.filter(function(name) {
-          return name !== CACHE_NAME;
-        }).map(function(name) {
-          return caches.delete(name);
-        })
-      );
-    })
+    Promise.all([
+      clients.claim(),
+      caches.keys().then(function(cacheNames) {
+        return Promise.all(
+          cacheNames.filter(function(name) {
+            return name !== CACHE_NAME;
+          }).map(function(name) {
+            return caches.delete(name);
+          })
+        );
+      })
+    ])
   );
 });
