@@ -9,7 +9,7 @@
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>芙光</title>
+<title>芙光 v5.0</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
 <link rel="apple-touch-icon" href="icons/icon-192.svg">
@@ -205,7 +205,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
     <div class="header">
       <div class="header-left">
         <div class="logo-box"></div>
-        <span class="app-name">芙光</span>
+        <span class="app-name">芙光 v5</span>
       </div>
       <div class="header-right">
         <button class="icon-btn" onclick="switchPage('pageExplore')">🔍</button>
@@ -218,7 +218,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
         <div class="hero-stickers">🐱🫠🎀🥹🐾🌸✨💫🐱🫠🥹🐾🌸✨</div>
         <div class="hero-content">
           <h1>芙光</h1>
-          <p>记录城市，分享生活</p>
+          <p>记录城市，分享生活 · v5</p>
         </div>
       </div>
       <div class="stats-card">
@@ -446,6 +446,9 @@ var testAccounts=[
   {user:'打卡小萌新',pass:'newbie2025',name:'打卡小萌新',bio:'今天也在努力打卡！',color:'#B07CD8',stats:{posts:234,following:167,likes:'567'}}
 ];
 var currentUser=null;
+// 恢复登录状态（页面重载时）
+var saved=sessionStorage.getItem('fuguang_user');
+if(saved){currentUser=JSON.parse(saved);}
 
 // ====== Login ======
 function populateAccountList(){
@@ -489,15 +492,16 @@ function login(){
   }
   document.getElementById('loginError').style.display='none';
   currentUser=acc;
+  sessionStorage.setItem('fuguang_user',JSON.stringify(acc));
   updateUserUI();
   document.getElementById('loginPage').classList.add('hide');
   document.getElementById('appScreen').style.display='flex';
-  // Show welcome toast
   setTimeout(function(){alert('👋 欢迎回来，'+currentUser.name+'！')},300)
 }
 function logout(){
   if(confirm('确定退出登录吗？')){
     currentUser=null;
+    sessionStorage.removeItem('fuguang_user');
     document.getElementById('loginUser').value='';
     document.getElementById('loginPass').value='';
     document.getElementById('loginPage').classList.remove('hide');
@@ -507,30 +511,35 @@ function logout(){
 }
 function updateUserUI(){
   if(!currentUser)return;
-  // Settings page
-  document.querySelector('#pageSettings .settings-name').textContent=currentUser.name;
-  document.querySelector('#pageSettings .settings-bio').textContent=currentUser.bio;
-  // Profile page
-  document.querySelector('#pageProfile .settings-name').textContent=currentUser.name;
-  document.querySelector('#pageProfile .settings-bio').textContent=currentUser.bio;
-  document.querySelector('#pageProfile .profile-stat .num').textContent=currentUser.stats.posts.toLocaleString();
-  document.querySelector('#pageProfile .profile-stat .num.blue').textContent=currentUser.stats.following.toLocaleString();
-  var statNums=document.querySelectorAll('#pageProfile .profile-stat .num');
-  statNums[2].textContent=currentUser.stats.likes;
-  // Avatar colors
-  var avatars=document.querySelectorAll('.settings-avatar');
-  avatars.forEach(function(a){a.style.background='linear-gradient(135deg,'+currentUser.color+',#5BC0DE)'})
+  try{
+    var sn1=document.querySelector('#pageSettings .settings-name');
+    if(sn1)sn1.textContent=currentUser.name;
+    var sb1=document.querySelector('#pageSettings .settings-bio');
+    if(sb1)sb1.textContent=currentUser.bio;
+    var sn2=document.querySelector('#pageProfile .settings-name');
+    if(sn2)sn2.textContent=currentUser.name;
+    var sb2=document.querySelector('#pageProfile .settings-bio');
+    if(sb2)sb2.textContent=currentUser.bio;
+    var pn=document.querySelector('#pageProfile .profile-stat .num');
+    if(pn)pn.textContent=currentUser.stats.posts.toLocaleString();
+    var pnb=document.querySelector('#pageProfile .profile-stat .num.blue');
+    if(pnb)pnb.textContent=currentUser.stats.following.toLocaleString();
+    var nums=document.querySelectorAll('#pageProfile .profile-stat .num');
+    if(nums.length>2)nums[2].textContent=currentUser.stats.likes;
+    var avs=document.querySelectorAll('.settings-avatar');
+    avs.forEach(function(a){a.style.background='linear-gradient(135deg,'+currentUser.color+',#5BC0DE)'});
+  }catch(e){}
 }
 
 function switchPage(id){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var el=document.getElementById(id);
+  if(!el)return;
   el.classList.add('active');
   var s=el.querySelector('.page-scroll,.explore-scroll,.post-content,.notif-list,.settings-content');
   if(s)s.scrollTop=0;
   var tb=el.querySelector('.tab-bar');
   if(tb)tb.style.display='flex';
-  // 每次切到个人主页或设置页时刷新用户数据，防止"夺舍"
   if(id==='pageProfile'||id==='pageSettings'){updateUserUI()}
 }
 function filterNotif(el,type){
@@ -602,7 +611,7 @@ function postContent(){
 }
 </script>
 <script>
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js?v=4')}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js?v=5')}
 </script>
 </body>
 </html>
