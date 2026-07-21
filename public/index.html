@@ -9,7 +9,7 @@
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>芙光 v7.0</title>
+<title>芙光 v8.0</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
 <link rel="apple-touch-icon" href="icons/icon-192.svg">
@@ -205,7 +205,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
     <div class="header">
       <div class="header-left">
         <div class="logo-box"></div>
-        <span class="app-name">芙光 v7</span>
+        <span class="app-name">芙光 v8</span>
       </div>
       <div class="header-right">
         <button class="icon-btn" onclick="switchPage('pageExplore')">🔍</button>
@@ -218,7 +218,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
         <div class="hero-stickers">🐱🫠🎀🥹🐾🌸✨💫🐱🫠🥹🐾🌸✨</div>
         <div class="hero-content">
           <h1>芙光</h1>
-          <p>记录城市，分享生活 · v7</p>
+          <p>记录城市，分享生活 · v8</p>
           <button onclick="if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister()})});caches.keys().then(function(names){names.forEach(function(n){caches.delete(n)})});alert('缓存已清除，请关闭APP后重新打开')}" style="background:#F5F5F7;border:none;border-radius:12px;padding:6px 16px;font-size:11px;color:#8E8E93;margin-top:6px;cursor:pointer">清除缓存</button>
         </div>
       </div>
@@ -441,6 +441,34 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
     </div>
   </div>
 
+  <!-- Page: User Profile (别人的主页) -->
+  <div class="page" id="pageUserProfile">
+    <div class="notif-header">
+      <button class="back-btn" onclick="goBackFromProfile()">〈 返回</button>
+      <span class="notif-title" id="userProfileTitle">用户主页</span>
+      <span style="font-size:clamp(18px,3.5vw,24px);color:#8E8E93">⋯</span>
+    </div>
+    <div class="settings-content">
+      <div class="settings-profile">
+        <div class="settings-avatar" id="userProfileAvatar"></div>
+        <div class="settings-info"><div class="settings-name" id="userProfileName">---</div><div class="settings-bio" id="userProfileBio">---</div></div>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="num" id="userProfilePosts">0</div><div class="lbl">内容</div></div>
+        <div class="profile-stat"><div class="num blue" id="userProfileFollowing">0</div><div class="lbl">关注</div></div>
+        <div class="profile-stat"><div class="num" id="userProfileLikes">0</div><div class="lbl">获赞</div></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-pill">
+        <div class="tab-item" onclick="switchPage('pageHome')"><span class="tab-icon">◉</span><span class="tab-label">首页</span></div>
+        <div class="tab-item" onclick="switchPage('pageExplore')"><span class="tab-icon">◎</span><span class="tab-label">探索</span></div>
+        <div class="tab-item" onclick="switchPage('pagePost')"><span class="tab-icon">✧</span><span class="tab-label">发布</span></div>
+        <div class="tab-item" onclick="switchPage('pageProfile')"><span class="tab-icon">○</span><span class="tab-label">我的</span></div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /screen -->
 </div><!-- /app -->
 
@@ -456,9 +484,8 @@ var testAccounts=[
   {user:'生活记录者',pass:'life2025',name:'生活记录者',bio:'记录日常美好',color:'#5BC0DE',stats:{posts:789,following:523,likes:'3.0k'}},
   {user:'打卡小萌新',pass:'newbie2025',name:'打卡小萌新',bio:'今天也在努力打卡！',color:'#B07CD8',stats:{posts:234,following:167,likes:'567'}}
 ];
-var currentUser=null;   // 已登录用户，不可被覆盖
-var profileUser=null;   // 正在查看的用户（别人的主页），null=看自己
-// 恢复登录状态（页面重载时）
+var currentUser=null;   // 已登录用户，永不被覆盖
+// 恢复登录状态
 var saved=sessionStorage.getItem('fuguang_user');
 if(saved){currentUser=JSON.parse(saved);}
 
@@ -504,7 +531,6 @@ function login(){
   }
   document.getElementById('loginError').style.display='none';
   currentUser=acc;
-  profileUser=null;  // 登录后重置为看自己
   sessionStorage.setItem('fuguang_user',JSON.stringify(acc));
   updateUserUI();
   document.getElementById('loginPage').classList.add('hide');
@@ -514,7 +540,6 @@ function login(){
 function logout(){
   if(confirm('确定退出登录吗？')){
     currentUser=null;
-    profileUser=null;
     sessionStorage.removeItem('fuguang_user');
     document.getElementById('loginUser').value='';
     document.getElementById('loginPass').value='';
@@ -523,11 +548,10 @@ function logout(){
     document.getElementById('loginHint').textContent='💡 点击上方按钮选择测试账号，或直接输入用户名和密码登录'
   }
 }
-function getDisplayUser(){return profileUser||currentUser}
 function updateUserUI(){
-  var u=getDisplayUser();
-  if(!u)return;
+  if(!currentUser)return;
   try{
+    var u=currentUser;
     var sn1=document.querySelector('#pageSettings .settings-name');
     if(sn1)sn1.textContent=u.name;
     var sb1=document.querySelector('#pageSettings .settings-bio');
@@ -536,32 +560,33 @@ function updateUserUI(){
     if(sn2)sn2.textContent=u.name;
     var sb2=document.querySelector('#pageProfile .settings-bio');
     if(sb2)sb2.textContent=u.bio;
-    var pt=document.querySelector('#pageProfile .notif-title');
-    if(pt)pt.textContent=profileUser?u.name+'的主页':'我的主页';
     var pn=document.querySelector('#pageProfile .profile-stat .num');
     if(pn)pn.textContent=u.stats.posts.toLocaleString();
     var pnb=document.querySelector('#pageProfile .profile-stat .num.blue');
     if(pnb)pnb.textContent=u.stats.following.toLocaleString();
     var nums=document.querySelectorAll('#pageProfile .profile-stat .num');
     if(nums.length>2)nums[2].textContent=u.stats.likes;
-    var avs=document.querySelectorAll('.settings-avatar');
+    var avs=document.querySelectorAll('#pageSettings .settings-avatar, #pageProfile .settings-avatar');
     avs.forEach(function(a){a.style.background='linear-gradient(135deg,'+u.color+',#5BC0DE)'});
   }catch(e){}
 }
 
+// 查看别人的主页 → 独立页面 pageUserProfile，不影响 currentUser
 function viewProfile(u){
-  profileUser=u;
-  updateUserUI();
-  // 手动激活 profile 页面，不经过 switchPage（避免被重置）
+  document.getElementById('userProfileTitle').textContent=u.name+'的主页';
+  document.getElementById('userProfileName').textContent=u.name;
+  document.getElementById('userProfileBio').textContent=u.bio;
+  document.getElementById('userProfilePosts').textContent=u.stats.posts.toLocaleString();
+  document.getElementById('userProfileFollowing').textContent=u.stats.following.toLocaleString();
+  document.getElementById('userProfileLikes').textContent=u.stats.likes;
+  var av=document.getElementById('userProfileAvatar');
+  if(av)av.style.background='linear-gradient(135deg,'+u.color+',#5BC0DE)';
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
-  var el=document.getElementById('pageProfile');
-  if(el){
-    el.classList.add('active');
-    var s=el.querySelector('.settings-content');
-    if(s)s.scrollTop=0;
-    var tb=el.querySelector('.tab-bar');
-    if(tb)tb.style.display='flex';
-  }
+  var el=document.getElementById('pageUserProfile');
+  if(el){el.classList.add('active');var s=el.querySelector('.settings-content');if(s)s.scrollTop=0;}
+}
+function goBackFromProfile(){
+  switchPage('pageExplore');
 }
 
 function switchPage(id){
@@ -573,12 +598,7 @@ function switchPage(id){
   if(s)s.scrollTop=0;
   var tb=el.querySelector('.tab-bar');
   if(tb)tb.style.display='flex';
-  // 点「我的」标签时强制回到自己的主页
-  if(id==='pageProfile'){
-    profileUser=null;
-    updateUserUI();
-  }
-  if(id==='pageSettings'){updateUserUI()}
+  if(id==='pageProfile'||id==='pageSettings'){updateUserUI()}
 }
 // 页面从后台恢复时强制刷新UI（WebView bfcache）
 window.addEventListener('pageshow',function(e){if(e.persisted)updateUserUI()});
