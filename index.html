@@ -9,7 +9,7 @@
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>芙光 v5.0</title>
+<title>芙光 v6.0</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
 <link rel="apple-touch-icon" href="icons/icon-192.svg">
@@ -205,7 +205,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
     <div class="header">
       <div class="header-left">
         <div class="logo-box"></div>
-        <span class="app-name">芙光 v5</span>
+        <span class="app-name">芙光 v6</span>
       </div>
       <div class="header-right">
         <button class="icon-btn" onclick="switchPage('pageExplore')">🔍</button>
@@ -218,7 +218,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
         <div class="hero-stickers">🐱🫠🎀🥹🐾🌸✨💫🐱🫠🥹🐾🌸✨</div>
         <div class="hero-content">
           <h1>芙光</h1>
-          <p>记录城市，分享生活 · v5</p>
+          <p>记录城市，分享生活 · v6</p>
         </div>
       </div>
       <div class="stats-card">
@@ -264,6 +264,16 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
         <button class="cat-tab" onclick="filterCat(this,'社区')">社区</button>
       </div>
       <div class="section-title" id="sectionTitle">热门推荐</div>
+      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px" id="userCards">
+        <div style="flex-shrink:0;background:#FFF;border-radius:16px;padding:10px 14px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.04);min-width:72px" onclick="viewProfile(testAccounts[1])"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#5BC0DE,#5BC0DE);margin:0 auto 4px"></div><div style="font-size:10px;font-weight:600;color:#2C2C2E">城市漫游者</div></div>
+        <div style="flex-shrink:0;background:#FFF;border-radius:16px;padding:10px 14px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.04);min-width:72px" onclick="viewProfile(testAccounts[2])"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#B07CD8,#B07CD8);margin:0 auto 4px"></div><div style="font-size:10px;font-weight:600;color:#2C2C2E">摄影达人</div></div>
+        <div style="flex-shrink:0;background:#FFF;border-radius:16px;padding:10px 14px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.04);min-width:72px" onclick="viewProfile(testAccounts[3])"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#53B883,#53B883);margin:0 auto 4px"></div><div style="font-size:10px;font-weight:600;color:#2C2C2E">美食探店</div></div>
+        <div style="flex-shrink:0;background:#FFF;border-radius:16px;padding:10px 14px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.04);min-width:72px" onclick="viewProfile(testAccounts[4])"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#F5A623,#F5A623);margin:0 auto 4px"></div><div style="font-size:10px;font-weight:600;color:#2C2C2E">旅行日记</div></div>
+        <div style="flex-shrink:0;background:#FFF;border-radius:16px;padding:10px 14px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.04);min-width:72px" onclick="viewProfile(testAccounts[5])"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#E84D8A,#E84D8A);margin:0 auto 4px"></div><div style="font-size:10px;font-weight:600;color:#2C2C2E">街拍爱好者</div></div>
+        <div style="flex-shrink:0;background:#FFF;border-radius:16px;padding:10px 14px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.04);min-width:72px" onclick="viewProfile(testAccounts[6])"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#5BC0DE,#5BC0DE);margin:0 auto 4px"></div><div style="font-size:10px;font-weight:600;color:#2C2C2E">生活记录者</div></div>
+        <div style="flex-shrink:0;background:#FFF;border-radius:16px;padding:10px 14px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.04);min-width:72px" onclick="viewProfile(testAccounts[7])"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#B07CD8,#B07CD8);margin:0 auto 4px"></div><div style="font-size:10px;font-weight:600;color:#2C2C2E">打卡小萌新</div></div>
+      </div>
+      <div class="section-title" style="margin-top:0">热门推荐</div>
       <div id="exploreGrid">
         <div class="card-grid">
           <div class="explore-card" style="background:linear-gradient(180deg,#E84D8A,rgba(232,77,138,.3))">
@@ -445,7 +455,8 @@ var testAccounts=[
   {user:'生活记录者',pass:'life2025',name:'生活记录者',bio:'记录日常美好',color:'#5BC0DE',stats:{posts:789,following:523,likes:'3.0k'}},
   {user:'打卡小萌新',pass:'newbie2025',name:'打卡小萌新',bio:'今天也在努力打卡！',color:'#B07CD8',stats:{posts:234,following:167,likes:'567'}}
 ];
-var currentUser=null;
+var currentUser=null;   // 已登录用户，不可被覆盖
+var profileUser=null;   // 正在查看的用户（别人的主页），null=看自己
 // 恢复登录状态（页面重载时）
 var saved=sessionStorage.getItem('fuguang_user');
 if(saved){currentUser=JSON.parse(saved);}
@@ -492,6 +503,7 @@ function login(){
   }
   document.getElementById('loginError').style.display='none';
   currentUser=acc;
+  profileUser=null;  // 登录后重置为看自己
   sessionStorage.setItem('fuguang_user',JSON.stringify(acc));
   updateUserUI();
   document.getElementById('loginPage').classList.add('hide');
@@ -501,6 +513,7 @@ function login(){
 function logout(){
   if(confirm('确定退出登录吗？')){
     currentUser=null;
+    profileUser=null;
     sessionStorage.removeItem('fuguang_user');
     document.getElementById('loginUser').value='';
     document.getElementById('loginPass').value='';
@@ -509,26 +522,45 @@ function logout(){
     document.getElementById('loginHint').textContent='💡 点击上方按钮选择测试账号，或直接输入用户名和密码登录'
   }
 }
+function getDisplayUser(){return profileUser||currentUser}
 function updateUserUI(){
-  if(!currentUser)return;
+  var u=getDisplayUser();
+  if(!u)return;
   try{
     var sn1=document.querySelector('#pageSettings .settings-name');
-    if(sn1)sn1.textContent=currentUser.name;
+    if(sn1)sn1.textContent=u.name;
     var sb1=document.querySelector('#pageSettings .settings-bio');
-    if(sb1)sb1.textContent=currentUser.bio;
+    if(sb1)sb1.textContent=u.bio;
     var sn2=document.querySelector('#pageProfile .settings-name');
-    if(sn2)sn2.textContent=currentUser.name;
+    if(sn2)sn2.textContent=u.name;
     var sb2=document.querySelector('#pageProfile .settings-bio');
-    if(sb2)sb2.textContent=currentUser.bio;
+    if(sb2)sb2.textContent=u.bio;
+    var pt=document.querySelector('#pageProfile .notif-title');
+    if(pt)pt.textContent=profileUser?u.name+'的主页':'我的主页';
     var pn=document.querySelector('#pageProfile .profile-stat .num');
-    if(pn)pn.textContent=currentUser.stats.posts.toLocaleString();
+    if(pn)pn.textContent=u.stats.posts.toLocaleString();
     var pnb=document.querySelector('#pageProfile .profile-stat .num.blue');
-    if(pnb)pnb.textContent=currentUser.stats.following.toLocaleString();
+    if(pnb)pnb.textContent=u.stats.following.toLocaleString();
     var nums=document.querySelectorAll('#pageProfile .profile-stat .num');
-    if(nums.length>2)nums[2].textContent=currentUser.stats.likes;
+    if(nums.length>2)nums[2].textContent=u.stats.likes;
     var avs=document.querySelectorAll('.settings-avatar');
-    avs.forEach(function(a){a.style.background='linear-gradient(135deg,'+currentUser.color+',#5BC0DE)'});
+    avs.forEach(function(a){a.style.background='linear-gradient(135deg,'+u.color+',#5BC0DE)'});
   }catch(e){}
+}
+
+function viewProfile(u){
+  profileUser=u;
+  updateUserUI();
+  // 手动激活 profile 页面，不经过 switchPage（避免被重置）
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  var el=document.getElementById('pageProfile');
+  if(el){
+    el.classList.add('active');
+    var s=el.querySelector('.settings-content');
+    if(s)s.scrollTop=0;
+    var tb=el.querySelector('.tab-bar');
+    if(tb)tb.style.display='flex';
+  }
 }
 
 function switchPage(id){
@@ -540,7 +572,12 @@ function switchPage(id){
   if(s)s.scrollTop=0;
   var tb=el.querySelector('.tab-bar');
   if(tb)tb.style.display='flex';
-  if(id==='pageProfile'||id==='pageSettings'){updateUserUI()}
+  // 点「我的」标签时强制回到自己的主页
+  if(id==='pageProfile'){
+    profileUser=null;
+    updateUserUI();
+  }
+  if(id==='pageSettings'){updateUserUI()}
 }
 function filterNotif(el,type){
   document.querySelectorAll('.notif-tab').forEach(function(t){t.classList.remove('active')});
