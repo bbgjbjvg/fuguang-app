@@ -618,9 +618,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
           <span class="pa-icon">☁</span>
           <span class="pa-text">点击从相册选择照片</span>
         </div>
-        <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+        <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="previewPhoto(this)">
         <div id="photoPreview" style="display:none;margin-top:14px">
-          <img id="previewImg" style="width:100%;border-radius:16px;max-height:300px;object-fit:cover">
+          <div id="previewGrid" style="display:flex;flex-wrap:wrap;gap:8px"></div>
         </div>
         <input class="caption-input" type="text" id="photoCaption" placeholder="为你的芙影流光写段描述……" style="margin-top:10px;display:block">
       </div>
@@ -1058,6 +1058,7 @@ function showStorageSettings(){
   var totalSize=0;
   posts.forEach(function(p){
     if(p.photo)totalSize+=p.photo.length*0.75;
+    if(p.photos){p.photos.forEach(function(ph){totalSize+=ph.length*0.75})}
     if(p.text)totalSize+=p.text.length
   });
   var sizeStr=totalSize>1048576?(totalSize/1048576).toFixed(1)+'MB':(totalSize>1024?(totalSize/1024).toFixed(1)+'KB':totalSize+'B');
@@ -1115,7 +1116,7 @@ function showAdminPanel(){
       var fullText=p.text||'[仅图片]';
       var displayText=fullText.length>100?fullText.substring(0,100)+'…':fullText;
       var timeAgo=getTimeAgo(p.time);
-      var hasPhoto=p.photo?' 📷':'';
+      var hasPhoto=(p.photos&&p.photos.length>0)||p.photo?' 📷':'';
       var comments=p.commentList?p.commentList.length:0;
       postList+='<div style="background:'+(i%2===0?'rgba(0,0,0,.02)':'')+';padding:10px 12px;border-radius:10px;margin-bottom:8px;border:1px solid #E8ECF0">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
@@ -1263,11 +1264,10 @@ function postContent(){
   var isPhoto=mode&&mode.textContent.includes('芙影');
   var ta=document.getElementById('postTextArea');
   var text=(ta&&ta.value.trim())||'';
-  var img=document.getElementById('previewImg');
-  var photoData='';
+  var photosData=[];
   if(isPhoto){
-    if(!img||!img.src||img.src===''){alert('⚠️ 请先选择照片');return}
-    photoData=img.src;
+    if(pendingPhotos.length===0){alert('⚠️ 请先选择照片');return}
+    photosData=pendingPhotos.slice();
     var cap=document.getElementById('photoCaption');
     if(cap&&cap.value.trim())text=cap.value.trim();
   }else{
@@ -1281,7 +1281,7 @@ function postContent(){
     userName:currentUser?currentUser.name:'芙光用户',
     userColor:currentUser?currentUser.color:'#FF6B9D',
     text:text,
-    photo:photoData,
+    photos:photosData,
     time:new Date().toISOString(),
     likes:0,
     comments:0
@@ -1297,6 +1297,8 @@ function postContent(){
   document.getElementById('charCount').textContent='0';
   document.getElementById('photoPreview').style.display='none';
   document.querySelector('.photo-area .pa-text').textContent='点击从相册选择照片';
+  pendingPhotos=[];
+  document.getElementById('previewGrid').innerHTML='';
   var msg=isPhoto?'📷 你的芙影流光已发布！':'✎ 你的芙文拾光已发布！';
   showToast(msg+' 已同步到主页和个人页面');
 }
@@ -1365,8 +1367,17 @@ function createFeedCard(p){
     html+='<button class="feed-follow-btn'+(isFollowingUser?' following':'')+'" data-user="'+escapeHtml(p.user)+'" style="margin-left:8px;padding:3px 10px;border-radius:12px;border:none;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;'+(isFollowingUser?'background:#E8ECF0;color:#8C9AAE':'background:#FF6B9D;color:#FFF')+'">'+(isFollowingUser?'✓ 已关注':'＋ 关注')+'</button>'
   }
   html+='<span class="post-more-btn" data-id="'+p.id+'" style="font-size:clamp(18px,3.5vw,22px);color:#8C9AAE;cursor:pointer;margin-left:auto;padding:0 4px;flex-shrink:0">⋮</span></div>';
-  if(p.photo){
-    html+='<img class="feed-card-img" src="'+p.photo+'" alt="post photo" onerror="this.style.display=\'none\'">'
+  var photos=(p.photos&&p.photos.length>0)?p.photos:(p.photo?[p.photo]:[]);
+  if(photos.length===1){
+    html+='<img class="feed-card-img" src="'+photos[0]+'" alt="post photo" onerror="this.style.display=\'none\'">'
+  }else if(photos.length>1){
+    html+='<div class="feed-photos-grid" style="display:grid;grid-template-columns:repeat('+(photos.length>2?2:photos.length)+',1fr);gap:4px;border-radius:14px;overflow:hidden;margin-top:8px">';
+    photos.slice(0,4).forEach(function(ph,i){
+      html+='<div style="position:relative;aspect-ratio:1;overflow:hidden"><img src="'+ph+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">';
+      if(i===3&&photos.length>4)html+='<div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:clamp(14px,3vw,20px);font-weight:700">+'+(photos.length-4)+'</div>';
+      html+='</div>'
+    });
+    html+='</div>'
   }
   if(p.text){
     html+='<div class="feed-card-text">'+escapeHtml(p.text)+'</div>'
@@ -1649,7 +1660,10 @@ function showPostDetail(pid){
     html+='<button class="detail-follow-btn'+(isFollower?' following':'')+'" id="detailFollowBtn">'+(isFollower?'✓ 已关注':'＋ 关注')+'</button>'
   }
   html+='</div>';
-  if(pp.photo)html+='<img src="'+pp.photo+'" class="detail-img" alt="post photo">';
+  var detailPhotos=(pp.photos&&pp.photos.length>0)?pp.photos:(pp.photo?[pp.photo]:[]);
+  detailPhotos.forEach(function(ph){
+    html+='<img src="'+ph+'" class="detail-img" alt="post photo" style="margin-bottom:8px;border-radius:14px;max-width:100%">'
+  });
   if(pp.text)html+='<div class="detail-text">'+escapeHtml(pp.text)+'</div>';
   html+='<div class="detail-actions">'+
     '<span class="detail-action" id="detailLikeBtn">❤ <span id="detailLikeCount">'+(pp.likes||0)+'</span></span>'+
@@ -1892,7 +1906,7 @@ function togglePostMode(el,mode){
   document.getElementById('photoMode').style.display=mode==='photo'?'block':'none';
   document.getElementById('textMode').style.display=mode==='text'?'block':'none';
   document.getElementById('postBtn').textContent=mode==='photo'?'✦ 发流光':'✦ 写拾光';
-  if(mode==='photo'){document.getElementById('photoPreview').style.display='none'}
+  if(mode==='photo'){document.getElementById('photoPreview').style.display='none';pendingPhotos=[];document.getElementById('previewGrid').innerHTML='';document.querySelector('.photo-area .pa-text').textContent='点击从相册选择照片'}
 }
 function updateCount(t){
   document.getElementById('charCount').textContent=t.value.length
@@ -1997,7 +2011,7 @@ function searchContent(q){
         var preview=(p.text||'[图片]').substring(0,40);
         var author=testAccounts.find(function(a){return a.user===p.user});
         var atId=author?' @'+author.id:'';
-        html+='<div class="notif-item" onclick="showPostDetail('+p.id+')" style="cursor:pointer"><div class="notif-text"><div class="notif-name">'+(p.userName||'匿名')+atId+'</div><div class="notif-msg">'+escapeHtml(preview)+(p.photo?' 📷':'')+'</div><div style="font-size:10px;color:#B4BCC8;margin-top:2px">'+getTimeAgo(p.time)+' · ❤️ '+(p.likes||0)+' · 💬 '+(p.commentList||[]).length+'</div></div></div>'
+        html+='<div class="notif-item" onclick="showPostDetail('+p.id+')" style="cursor:pointer"><div class="notif-text"><div class="notif-name">'+(p.userName||'匿名')+atId+'</div><div class="notif-msg">'+escapeHtml(preview)+((p.photos&&p.photos.length>0)||p.photo?' 📷':'')+'</div><div style="font-size:10px;color:#B4BCC8;margin-top:2px">'+getTimeAgo(p.time)+' · ❤️ '+(p.likes||0)+' · 💬 '+(p.commentList||[]).length+'</div></div></div>'
       });
     }
 
@@ -2009,16 +2023,45 @@ function searchContent(q){
     g.style.display='block';r.style.display='none';if(st)st.style.display='block'
   }
 }
+var pendingPhotos=[];
 function previewPhoto(input){
-  if(input.files&&input.files[0]){
+  var files=input.files;
+  if(!files||files.length===0)return;
+  pendingPhotos=[];
+  var grid=document.getElementById('previewGrid');
+  grid.innerHTML='';
+  var loaded=0;
+  Array.from(files).forEach(function(file){
     var reader=new FileReader();
     reader.onload=function(e){
-      document.getElementById('previewImg').src=e.target.result;
-      document.getElementById('photoPreview').style.display='block';
-      document.querySelector('.photo-area .pa-text').textContent='重新选择照片'
+      pendingPhotos.push(e.target.result);
+      var wrapper=document.createElement('div');
+      wrapper.style.cssText='position:relative;width:clamp(80px,25vw,140px);height:clamp(80px,25vw,140px);border-radius:10px;overflow:hidden;flex-shrink:0';
+      var img=document.createElement('img');
+      img.src=e.target.result;
+      img.style.cssText='width:100%;height:100%;object-fit:cover';
+      var del=document.createElement('span');
+      del.textContent='✕';
+      del.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.55);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;line-height:1';
+      del.onclick=function(ev){
+        ev.stopPropagation();
+        var idx=pendingPhotos.indexOf(e.target.result);
+        if(idx>=0)pendingPhotos.splice(idx,1);
+        wrapper.remove();
+        if(pendingPhotos.length===0){
+          document.getElementById('photoPreview').style.display='none';
+          document.querySelector('.photo-area .pa-text').textContent='点击从相册选择照片'
+        }
+      };
+      wrapper.appendChild(img);wrapper.appendChild(del);grid.appendChild(wrapper);
+      loaded++;
+      if(loaded===files.length){
+        document.getElementById('photoPreview').style.display='block';
+        document.querySelector('.photo-area .pa-text').textContent='已选择 '+files.length+' 张照片（点击更换）'
+      }
     };
-    reader.readAsDataURL(input.files[0])
-  }
+    reader.readAsDataURL(file)
+  })
 }
 // Avatar upload handler
 function setupAvatarUpload(){
