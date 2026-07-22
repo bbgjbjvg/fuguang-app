@@ -2053,7 +2053,7 @@ function showUserProfile(username){
   updateProfileDisplay(acc);
   // Belt-and-suspenders: explicitly force title in case anything overrides it later
   var title=document.getElementById('profilePageTitle');
-  if(title)title.textContent=currentUser&&acc.user===currentUser.user?'我的主页':acc.name+'的主页';
+  if(title)title.textContent=currentUser&&acc.user===currentUser.user?'':acc.name+'的主页';
   // Direct page switch without touching tabbar or switchPage override
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   document.getElementById('pageProfile').classList.add('active');
@@ -2066,7 +2066,7 @@ function updateProfileDisplay(acc){
   var isOwn=currentUser&&acc.user===currentUser.user;
   // Update title
   var title=document.getElementById('profilePageTitle');
-  if(title)title.textContent=isOwn?'我的主页':acc.name+'的主页';
+  if(title)title.textContent=isOwn?'':acc.name+'的主页';
   // Header button
   var hdrBtn=document.getElementById('profileHeaderBtn');
   if(hdrBtn){
