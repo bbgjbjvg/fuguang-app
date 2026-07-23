@@ -1008,7 +1008,6 @@ function setFontSize(px, silent){
   try{localStorage.setItem('fuguang_fontsize',px)}catch(e){}
   var scale=(px/16).toFixed(2);
   document.querySelector('.app').style.zoom=scale;
-  document.querySelector('.app').style.MozTransform='scale('+scale+')';
   document.querySelector('.app').style.transformOrigin='top center';
   if(!silent)showToast('✅ 字体大小已设置为 '+px+'px')
 }
@@ -1193,6 +1192,19 @@ function showProfileFollowing(){
 
 // ====== Page Switching ======
 function switchPage(id,skipTabUpdate){
+  // Clear pending photos when leaving post page
+  var curActive=document.querySelector('.page.active');
+  if(curActive&&curActive.id==='pagePost'&&id!=='pagePost'){
+    pendingPhotos=[];
+    document.getElementById('previewGrid').innerHTML='';
+    document.getElementById('photoPreview').style.display='none';
+    var pa0=document.querySelector('.photo-area');
+    if(pa0){pa0.style.height='';pa0.style.minHeight='';pa0.style.padding='';var paIcon0=pa0.querySelector('.pa-icon');if(paIcon0)paIcon0.style.display=''}
+    var paText0=document.querySelector('.photo-area .pa-text');
+    if(paText0)paText0.textContent='点击从相册选择照片';
+    var cap=document.getElementById('photoCaption');
+    if(cap)cap.value='';
+  }
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var el=document.getElementById(id);
   el.classList.add('active');
@@ -1254,6 +1266,8 @@ function postContent(){
   renderProfilePosts();
   // Reset form
   if(ta)ta.value='';
+  var capInput=document.getElementById('photoCaption');
+  if(capInput)capInput.value='';
   document.getElementById('charCount').textContent='0';
   document.getElementById('photoPreview').style.display='none';
   document.querySelector('.photo-area .pa-text').textContent='点击从相册选择照片';
@@ -1616,7 +1630,8 @@ function showPostDetail(pid){
   var actualComments=(pp.commentList||[]).length;
   var isFollower=currentUser&&isFollowing(pp.user);
   var canFollow=currentUser&&pp.user!==currentUser.user;
-  var backId=document.querySelector('.page.active')?document.querySelector('.page.active').id:'pageHome';
+  var existingBack=detailEl.getAttribute('data-back');
+  var backId=existingBack||(document.querySelector('.page.active')?document.querySelector('.page.active').id:'pageHome');
   detailEl.setAttribute('data-back',backId);
   var html='<div class="detail-header">'+
     '<button class="back-btn" id="detailBackBtn">〈 返回</button>'+
@@ -1889,7 +1904,7 @@ function filterTag(el,tag){
   if(selectedTags.length>0){
     var catTabs=document.querySelectorAll('.cat-tab');
     for(var i=0;i<catTabs.length;i++){
-      if(catTabs[i].textContent.trim()==='日常'){filterCat(catTabs[i],'游戏');break}
+      if(catTabs[i].textContent.trim()==='日常'){filterCat(catTabs[i],'日常');break}
     }
   }
   
