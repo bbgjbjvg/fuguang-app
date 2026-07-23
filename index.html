@@ -34,15 +34,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .login-btn:active{transform:scale(.97)}
 .login-hint{font-size:clamp(10px,1.5vw,12px);color:#8C9AAE;margin-top:16px;text-align:center;display:none}
 .login-error{font-size:clamp(11px,1.8vw,13px);color:#FF3B30;margin-bottom:8px;display:none;text-align:center;background:rgba(255,59,48,.08);padding:8px 16px;border-radius:12px}
-.login-accounts{width:100%;max-width:360px;max-height:clamp(120px,25vw,180px);overflow-y:auto;background:#FFF;border-radius:clamp(12px,2.5vw,18px);box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:10px;padding:6px 0;display:none;border:1px solid #E8ECF0}
-.login-accounts::-webkit-scrollbar{width:3px}
-.login-accounts::-webkit-scrollbar-thumb{background:#E0E6EC;border-radius:3px}
-.login-account-item{padding:clamp(8px,1.8vw,12px) clamp(14px,2.5vw,18px);color:#2C3A4A;font-size:clamp(12px,2.2vw,14px);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .15s}
-.login-account-item:active,.login-account-item:hover{background:#F0F5FA}
-.login-account-item .ac-label{font-weight:500}
-.login-account-item .ac-hint{font-size:clamp(9px,1.5vw,11px);color:#B4BCC8}
-.login-toggle-list{background:transparent;border:1px solid #E0E6EC;border-radius:16px;padding:clamp(4px,1vw,6px) clamp(12px,2.2vw,16px);font-size:clamp(10px,1.8vw,12px);color:#8C9AAE;cursor:pointer;margin-bottom:6px;transition:background .2s}
-.login-toggle-list:active{background:#F0F5FA}
 
 /* ====== App Screen ====== */
 .screen{width:100%;height:100%;display:flex;flex-direction:column;position:relative}
@@ -314,7 +305,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .modal-avatar-row{border-color:#3A4A5C}
 .app.dark-mode .modal-avatar-preview .cam-badge{background:rgba(0,0,0,.6)}
 .app.dark-mode .modal-body .modal-btn[style*="background:#E8ECF0"]{background:#3A4A5C!important;color:#FFF!important}
-.app.dark-mode .settings-id,.app.dark-mode .profile-id{color:#8C9AAE!important}
+.app.dark-mode .settings-id{color:#8C9AAE!important}
 
 /* ====== Post Detail Page (Zhihu-style) ====== */
 .detail-header{padding:clamp(12px,3vw,18px) clamp(16px,4vw,24px);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;border-bottom:1px solid #E8ECF0}
@@ -356,9 +347,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .detail-comment-input input{background:#2C3A4A;border-color:#3A4A5C;color:#FFF}
 .app.dark-mode .detail-comment-input input::placeholder{color:#5A6A7A}
 .app.dark-mode .detail-comment{border-color:#3A4A5C}
-.app.dark-mode .detail-comment-name{color:#FFF}
-.app.dark-mode .detail-comment-text{color:#E0E6EC}
-.app.dark-mode .detail-comment-time{color:#5A6A7A}
 .app.dark-mode .detail-comments-section .replies-list{color:#E0E6EC}
 .app.dark-mode .detail-avatar{border:2px solid #3A4A5C}
 .app.dark-mode .back-btn{color:#FF6B9D}
@@ -421,15 +409,12 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .char-count{color:#5A6A7A}
 .app.dark-mode .photo-area{background:#2C3A4A}
 .app.dark-mode .photo-area .pa-text{color:#5A6A7A}
-.app.dark-mode .base-notif-header{color:#FFF}
 .app.dark-mode .notif-pill{background:#2C3A4A}
 .app.dark-mode .feed-card-header{background:transparent}
 .app.dark-mode .feed-card-time{color:#5A6A7A}
 .app.dark-mode .feed-comment{background:transparent}
 .app.dark-mode .comment-input-wrap{background:#2C3A4A}
 .app.dark-mode .post-more-btn{color:#A8B0BC!important}
-.app.dark-mode .stream-tab:not(.active){background:#2C3A4A;color:#8C9AAE}
-.app.dark-mode .detail-scroll{background:#1C1C1E}
 .app.dark-mode .post-type-btn:not(.active){background:#2C3A4A}
 .app.dark-mode .hero{background:linear-gradient(135deg,#B83D6E,#3A90B0)}
 .app.dark-mode .feed-follow-btn.following{background:#3A4A5C!important;color:#8C9AAE!important}
@@ -841,32 +826,6 @@ function savePosts(p){
 }
 
 // ====== Login ======
-function populateAccountList(){
-  var el=document.getElementById('loginAccounts');
-  el.innerHTML='';
-  testAccounts.forEach(function(a){
-    var d=document.createElement('div');
-    d.className='login-account-item';
-    d.onclick=function(){selectAccount(a.user)};
-    d.innerHTML='<span class="ac-label">'+a.user+'</span><span class="ac-hint">••••••</span>';
-    el.appendChild(d)
-  })
-}
-function toggleAccountList(){
-  var el=document.getElementById('loginAccounts');
-  if(el.style.display==='block'){el.style.display='none'}
-  else{populateAccountList();el.style.display='block';el.scrollTop=0}
-}
-function selectAccount(u){
-  var acc=testAccounts.find(function(a){return a.user===u});
-  if(acc){
-    document.getElementById('loginUser').value=acc.user;
-    document.getElementById('loginPass').value=acc.pass;
-    document.getElementById('loginAccounts').style.display='none';
-    document.getElementById('loginError').style.display='none';
-    document.getElementById('loginHint').textContent='✅ 已选择：'+acc.user+'，点击"进入芙光"立即体验'
-  }
-}
 function login(){
   var u=document.getElementById('loginUser').value.trim();
   var p=document.getElementById('loginPass').value.trim();
@@ -1211,9 +1170,10 @@ function showProfilePosts(){
 }
 function showProfileLikes(){
   if(!currentUser)return;
+  var viewingUser=getProfileViewingUser()||currentUser;
   var list=document.getElementById('profilePostList');
   if(!list)return;
-  var posts=getPosts().filter(function(p){return p.likes>0}).sort(function(a,b){return(b.likes||0)-(a.likes||0)}).slice(0,20);
+  var posts=getPosts().filter(function(p){return p.user===viewingUser.user&&p.likes>0}).sort(function(a,b){return(b.likes||0)-(a.likes||0)}).slice(0,20);
   list.innerHTML='';
   if(posts.length===0){list.innerHTML='<div class="feed-card-empty">还没有获赞记录 ✨</div>';return}
   posts.forEach(function(p){list.appendChild(createFeedCard(p))});
@@ -1536,6 +1496,13 @@ function createFeedCard(p){
     e.stopPropagation();
     showPostDetail(pid)
   };
+  // Multi-photo grid images also clickable
+  d.querySelectorAll('.feed-photos-grid img').forEach(function(gi){
+    gi.onclick=function(e){
+      e.stopPropagation();
+      showPostDetail(pid)
+    }
+  });
   return d
 }
 function attachReplyEvents(container,pid){
@@ -1704,9 +1671,12 @@ function showPostDetail(pid){
   if(authorArea)authorArea.onclick=function(){showUserProfile(pp.user)};
   var likeBtn=document.getElementById('detailLikeBtn');
   if(likeBtn)likeBtn.onclick=function(){
+    var liked=getLikedPosts();
+    if(liked.indexOf(pid)>-1){showToast('❤️ 已赞过');return}
     var ps=getPosts(),pp2=ps.find(function(x){return x.id===pid});
     if(!pp2)return;
     pp2.likes=(pp2.likes||0)+1;savePosts(ps);
+    liked.push(pid);saveLikedPosts(liked);
     var lc=document.getElementById('detailLikeCount');
     if(lc)lc.textContent=pp2.likes;
     document.querySelectorAll('[data-post-id="'+pid+'"] .action-like').forEach(function(s){s.textContent='❤ '+(pp2.likes||0)});
@@ -1787,52 +1757,6 @@ function getFollowingCount(){return getFollowing().length}
 // ====== Like Dedup ======
 function getLikedPosts(){try{return JSON.parse(localStorage.getItem('fuguang_likes')||'[]')}catch(e){return[]}}
 function saveLikedPosts(l){try{localStorage.setItem('fuguang_likes',JSON.stringify(l))}catch(e){}}
-// Post detail page interactions
-function likeFromDetail(pid,el){
-  var liked=getLikedPosts();
-  if(liked.indexOf(pid)>-1){showToast('❤️ 已赞过');return}
-  var posts=getPosts(),pp=posts.find(function(x){return x.id===pid});
-  if(!pp)return;
-  pp.likes=(pp.likes||0)+1;savePosts(posts);
-  liked.push(pid);saveLikedPosts(liked);
-  var count=el.querySelector('.like-count');
-  if(count)count.textContent=pp.likes;
-  // Update all cards
-  document.querySelectorAll('[data-post-id="'+pid+'"] .action-like').forEach(function(s){s.textContent='❤ '+(pp.likes||0)});
-  updateProfileStats()
-}
-function commentFromDetail(pid){
-  var inp=document.getElementById('detailCommentInput');
-  if(!inp||!inp.value.trim())return;
-  var text=inp.value.trim();
-  var posts=getPosts(),pp=posts.find(function(x){return x.id===pid});
-  if(!pp)return;
-  if(!pp.commentList)pp.commentList=[];
-  pp.commentList.push({name:currentUser?currentUser.name:'匿名',text:text,time:new Date().toISOString(),replies:[]});
-  pp.comments=pp.commentList.length;savePosts(posts);
-  inp.value='';
-  showPostDetail(pid);
-  renderAllFeeds();
-  renderProfilePosts();
-  updateProfileStats()
-}
-function replyFromDetail(pid,ci){
-  var rl=document.getElementById('detailReplies'+ci);
-  if(!rl)return;
-  var name=currentUser?currentUser.name:'匿名';
-  // Simple prompt for reply text
-  var text=prompt('回复评论：');
-  if(!text||!text.trim())return;
-  var posts=getPosts(),pp=posts.find(function(x){return x.id===pid});
-  if(!pp||!pp.commentList||!pp.commentList[ci])return;
-  if(!pp.commentList[ci].replies)pp.commentList[ci].replies=[];
-  pp.commentList[ci].replies.push({name:name,text:text.trim(),time:new Date().toISOString()});
-  pp.comments=pp.commentList.length;savePosts(posts);
-  showPostDetail(pid);
-  renderAllFeeds();
-  renderProfilePosts();
-  updateProfileStats()
-}
 // Update stats with follow count
 var _origUpdateProfileStats=updateProfileStats;
 updateProfileStats=function(){
@@ -2050,48 +1974,58 @@ function previewPhoto(input){
   var newCount=pendingPhotos.length+files.length;
   if(newCount>9){alert('⚠️ 最多只能选择9张照片，当前已有'+pendingPhotos.length+'张，还能选'+(9-pendingPhotos.length)+'张');return}
   var grid=document.getElementById('previewGrid');
+  var temp=new Array(files.length);
   var loaded=0;
-  var totalAfter=pendingPhotos.length+files.length;
-  Array.from(files).forEach(function(file){
-    var reader=new FileReader();
-    reader.onload=function(e){
-      pendingPhotos.push(e.target.result);
-      var wrapper=document.createElement('div');
-      wrapper.style.cssText='position:relative;width:clamp(80px,25vw,140px);height:clamp(80px,25vw,140px);border-radius:10px;overflow:hidden;flex-shrink:0';
-      var img=document.createElement('img');
-      img.src=e.target.result;
-      img.style.cssText='width:100%;height:100%;object-fit:cover';
-      var del=document.createElement('span');
-      del.textContent='✕';
-      del.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.55);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;line-height:1';
-      del.onclick=function(ev){
-        ev.stopPropagation();
-        var idx=pendingPhotos.indexOf(e.target.result);
-        if(idx>=0)pendingPhotos.splice(idx,1);
-        wrapper.remove();
-        if(pendingPhotos.length===0){
-          document.getElementById('photoPreview').style.display='none';
-          var pa2=document.querySelector('.photo-area');
-          pa2.style.height='';pa2.style.minHeight='';pa2.style.padding='';
-          var paIcon2=pa2.querySelector('.pa-icon');
-          if(paIcon2)paIcon2.style.display='';
-          document.querySelector('.photo-area .pa-text').textContent='点击从相册选择照片'
-        }else{
+  for(var i=0;i<files.length;i++){
+    (function(idx){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        temp[idx]=e.target.result;
+        loaded++;
+        if(loaded===files.length){
+          // All loaded, append in correct order
+          for(var j=0;j<temp.length;j++){
+            pendingPhotos.push(temp[j]);
+            var wrapper=document.createElement('div');
+            wrapper.style.cssText='position:relative;width:clamp(80px,25vw,140px);height:clamp(80px,25vw,140px);border-radius:10px;overflow:hidden;flex-shrink:0';
+            var img=document.createElement('img');
+            img.src=temp[j];
+            img.style.cssText='width:100%;height:100%;object-fit:cover';
+            var del=document.createElement('span');
+            del.textContent='✕';
+            del.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.55);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;line-height:1';
+            (function(dataUrl,wr){
+              del.onclick=function(ev){
+                ev.stopPropagation();
+                var idx=pendingPhotos.indexOf(dataUrl);
+                if(idx>=0)pendingPhotos.splice(idx,1);
+                wr.remove();
+                if(pendingPhotos.length===0){
+                  document.getElementById('photoPreview').style.display='none';
+                  var pa2=document.querySelector('.photo-area');
+                  pa2.style.height='';pa2.style.minHeight='';pa2.style.padding='';
+                  var paIcon2=pa2.querySelector('.pa-icon');
+                  if(paIcon2)paIcon2.style.display='';
+                  document.querySelector('.photo-area .pa-text').textContent='点击从相册选择照片'
+                }else{
+                  document.querySelector('.photo-area .pa-text').textContent='已选择 '+pendingPhotos.length+' 张照片（点击继续添加）'
+                }
+              }
+            })(temp[j],wrapper);
+            wrapper.appendChild(img);wrapper.appendChild(del);grid.appendChild(wrapper)
+          }
+          document.getElementById('photoPreview').style.display='block';
+          var pa=document.querySelector('.photo-area');
+          pa.style.height='auto';pa.style.minHeight='auto';pa.style.padding='10px';
+          var paIcon=pa.querySelector('.pa-icon');
+          if(paIcon)paIcon.style.display='none';
           document.querySelector('.photo-area .pa-text').textContent='已选择 '+pendingPhotos.length+' 张照片（点击继续添加）'
         }
       };
-      wrapper.appendChild(img);wrapper.appendChild(del);grid.appendChild(wrapper);
-      loaded++;
-      if(loaded===files.length){
-        document.getElementById('photoPreview').style.display='block';
-        var pa=document.querySelector('.photo-area');
-        pa.style.height='auto';pa.style.minHeight='auto';pa.style.padding='10px';
-        pa.querySelector('.pa-icon').style.display='none';
-        document.querySelector('.photo-area .pa-text').textContent='已选择 '+totalAfter+' 张照片（点击继续添加）'
-      }
-    };
-    reader.readAsDataURL(file)
-  })
+      reader.readAsDataURL(files[idx])
+    })(i)
+  }
+  input.value=''; // 清空文件选择器，允许重复选择相同文件
 }
 // Avatar upload handler
 function setupAvatarUpload(){
@@ -2125,6 +2059,9 @@ function showUserProfile(username){
   if(!username){showToast('⚠️ 用户名为空');return}
   var acc=testAccounts.find(function(a){return a.user===username});
   if(!acc){showToast('⚠️ 未找到用户: '+username);return}
+  // Capture previous page BEFORE switching
+  var prevPage=document.querySelector('.page.active');
+  var prevId=prevPage?prevPage.id:'pageHome';
   updateProfileDisplay(acc);
   // Belt-and-suspenders: explicitly force title in case anything overrides it later
   var title=document.getElementById('profilePageTitle');
@@ -2135,7 +2072,24 @@ function showUserProfile(username){
   var scrollEl=document.querySelector('#pageProfile .page-scroll');
   if(scrollEl)scrollEl.scrollTop=0;
   var tb=document.getElementById('globalTabBar');
-  if(tb)tb.classList.add('show')
+  if(tb)tb.classList.add('show');
+  // Update tab bar active state to match profile page
+  if(tb){
+    var tabs=tb.querySelectorAll('.tab-item');
+    tabs.forEach(function(t){
+      t.classList.remove('tab-active');
+      t.style.removeProperty('background');
+      if(t.getAttribute('data-page')==='pageProfile')t.classList.add('tab-active')
+    })
+  }
+  // Set back button to return to previous page instead of always home
+  var backBtn=document.querySelector('#pageProfile .back-btn');
+  if(backBtn){
+    // If coming from own profile, use home; otherwise save the actual previous page
+    var backId=(currentUser&&acc.user===currentUser.user)?'pageHome':prevId;
+    backBtn.setAttribute('data-back',backId);
+    backBtn.onclick=function(){switchPage(backBtn.getAttribute('data-back')||'pageHome')}
+  }
 }
 function updateProfileDisplay(acc){
   var isOwn=currentUser&&acc.user===currentUser.user;
