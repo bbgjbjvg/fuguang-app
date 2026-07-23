@@ -406,8 +406,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .text-compose textarea{color:#FFF;background:transparent}
 .app.dark-mode .text-compose textarea::placeholder{color:#5A6A7A}
 .app.dark-mode .char-count{color:#5A6A7A}
-.app.dark-mode .photo-area{background:#2C3A4A}
+.app.dark-mode .photo-area{background:#2C3A4A;color:#5A6A7A}
 .app.dark-mode .photo-area .pa-text{color:#5A6A7A}
+.app.dark-mode .photo-area .pa-icon{color:#5A6A7A}
 .app.dark-mode .notif-pill{background:#2C3A4A}
 .app.dark-mode .feed-card-header{background:transparent}
 .app.dark-mode .feed-card-time{color:#5A6A7A}
@@ -428,8 +429,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .post-header-more{color:#5A6A7A}
 .app.dark-mode .search-bar .si{color:#5A6A7A}
 .app.dark-mode .comment-input-wrap button{background:#FF6B9D;color:#FFF}
-.app.dark-mode .photo-area{color:#5A6A7A}
-.app.dark-mode .photo-area .pa-icon{color:#5A6A7A}
+.app.dark-mode #searchResults .notif-item[style]{background:#2C3A4A!important}
+.app.dark-mode #resultsList div[style*="color:#B4BCC8"]{color:#5A6A7A!important}
+.app.dark-mode #resultsList .notif-msg{color:#8C9AAE!important}
 .app.dark-mode .profile-cover-id{color:#8C9AAE}
 .app.dark-mode .profile-cover-btn.follow{background:#FF6B9D;color:#FFF}
 .app.dark-mode .profile-cover-btn.follow.following{background:#3A4A5C;color:#8C9AAE}
@@ -894,6 +896,9 @@ function logout(){
   var paText0=document.querySelector('.photo-area .pa-text');
   if(paText0)paText0.textContent='点击从相册选择照片';
   try{localStorage.removeItem('fuguang_last_user')}catch(e){}
+  // Reset profile bg state
+  var bgEl=document.getElementById('profileCoverBg');
+  if(bgEl){bgEl.onclick=null;bgEl.style.cursor='default';bgEl.classList.remove('has-bg');bgEl.style.backgroundImage='';bgEl.style.background='linear-gradient(135deg,#FF6B9D,#4FC3F7)'}
   document.getElementById('loginUser').value='';
   document.getElementById('loginPass').value='';
   document.getElementById('loginPage').classList.remove('hide');
@@ -1050,7 +1055,7 @@ function setFontSize(px, silent){
   try{localStorage.setItem('fuguang_fontsize',px)}catch(e){}
   var scale=(px/16).toFixed(2);
   var appEl=document.querySelector('.app');
-  if(appEl){appEl.style.zoom=scale;appEl.style.transform='scale('+scale+')';appEl.style.transformOrigin='top center'}
+  if(appEl){appEl.style.zoom=scale;appEl.style.transformOrigin='top center'}
   if(!silent)showToast('✅ 字体大小已设置为 '+px+'px')
 }
 function showStorageSettings(){
@@ -1131,6 +1136,7 @@ function clearAllData(){
   allKeys.forEach(function(k){if(k.indexOf('fuguang_avatar_')===0||k.indexOf('fuguang_bg_')===0)localStorage.removeItem(k)})
   }catch(e){}
   closeModal();
+  renderAllFeeds();renderProfilePosts();updateProfileStats();
   showToast('✅ 所有数据已清除')
 }
 function showAdminPanel(){
@@ -1200,7 +1206,6 @@ function showAdminPanel(){
   )
 }
 function deleteSpecificPost(pid){
-  if(!confirm('确定要删除这条帖子吗？'))return;
   var posts=getPosts();
   var idx=posts.findIndex(function(p){return p.id===pid});
   if(idx>-1){posts.splice(idx,1);savePosts(posts)}
@@ -1276,6 +1281,7 @@ function showProfileFollowing(){
 function switchPage(id,skipTabUpdate){
   // Clear pending photos when leaving post page
   var curActive=document.querySelector('.page.active');
+  var isSamePage=curActive&&curActive.id===id;
   if(curActive&&curActive.id==='pagePost'&&id!=='pagePost'){
     pendingPhotos=[];
     document.getElementById('previewGrid').innerHTML='';
@@ -1290,8 +1296,10 @@ function switchPage(id,skipTabUpdate){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var el=document.getElementById(id);
   el.classList.add('active');
-  var s=el.querySelector('.page-scroll,.explore-scroll,.post-content,.notif-list,.settings-content');
-  if(s)s.scrollTop=0;
+  if(!isSamePage){
+    var s=el.querySelector('.page-scroll,.explore-scroll,.post-content,.notif-list,.settings-content');
+    if(s)s.scrollTop=0;
+  }
   var tb=document.getElementById('globalTabBar');
   if(el.getAttribute('data-hide-tabbar')==='1'){
     tb.classList.remove('show')
@@ -2017,17 +2025,11 @@ function filterTag(el,tag){
   var feed=document.getElementById('exploreFeed');
   if(!feed)return;
   
-  // Switch to 日常 tab when any tag is selected
-  if(selectedTags.length>0){
-    var catTabs=document.querySelectorAll('.cat-tab');
-    for(var i=0;i<catTabs.length;i++){
-      if(catTabs[i].textContent.trim()==='日常'){filterCat(catTabs[i],'日常');break}
-    }
-  }
-  
   if(selectedTags.length===0){
-    // No tags selected, show all
-    renderFeedList(feed,getPosts(),'explore');
+    // No tags selected, show all - restore to current category
+    var activeCat=document.querySelector('.cat-tab.active');
+    if(activeCat){filterCat(activeCat,activeCat.textContent.trim())}
+    else{renderFeedList(feed,getPosts(),'explore')}
     return
   }
   
@@ -2049,9 +2051,11 @@ function filterTag(el,tag){
 }
 function searchContent(q){
   var g=document.getElementById('exploreGrid'),r=document.getElementById('searchResults'),l=document.getElementById('resultsList'),st=document.getElementById('sectionTitle');
+  var ef=document.getElementById('exploreFeed'),efp=ef?ef.parentNode:null;
   if(!l)return;
   if(q.trim()){
     g.style.display='none';r.style.display='block';if(st)st.style.display='none';
+    if(efp)efp.style.display='none';
     var posts=getPosts();
     var kw=q.trim().toLowerCase();
     var html='';
@@ -2096,7 +2100,8 @@ function searchContent(q){
     }
     l.innerHTML=html
   }else{
-    g.style.display='block';r.style.display='none';if(st)st.style.display='block'
+    g.style.display='block';r.style.display='none';if(st)st.style.display='block';
+    if(efp)efp.style.display=''
   }
 }
 var pendingPhotos=[];
@@ -2408,8 +2413,12 @@ function removeProfileBg(){
 // Also update profile when returning to the page
 var _origSwitchPage=switchPage;
 switchPage=function(id,skipTabUpdate){
+  var prevActive=document.querySelector('.page.active');
+  var prevId=prevActive?prevActive.id:'';
   _origSwitchPage(id,skipTabUpdate);
   if(id==='pageProfile'){
+    // Back from detail page to profile: clear viewing user to show own profile
+    if(prevId==='pagePostDetail'){saveProfileViewingUser(null)}
     var vu=getProfileViewingUser();
     if(vu)updateProfileDisplay(vu);else if(currentUser)updateProfileDisplay(currentUser)
   }
