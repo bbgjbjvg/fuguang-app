@@ -346,6 +346,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .detail-action:active{color:#FF6B9D}
 .app.dark-mode .detail-comment-input input{background:#2C3A4A;border-color:#3A4A5C;color:#FFF}
 .app.dark-mode .detail-comment-input input::placeholder{color:#5A6A7A}
+.app.dark-mode .detail-comment-input button{background:linear-gradient(135deg,#FF6B9D,#4FC3F7);color:#FFF}
 .app.dark-mode .detail-comment{border-color:#3A4A5C}
 .app.dark-mode .detail-comments-section .replies-list{color:#E0E6EC}
 .app.dark-mode .detail-avatar{border:2px solid #3A4A5C}
@@ -398,8 +399,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .settings-item:active{background:#3A4A5C}
 .app.dark-mode .settings-logout{background:#2C3A4A}
 .app.dark-mode .settings-arrow{color:#5A6A7A}
-.app.dark-mode .profile-stat{background:#2C3A4A}
-.app.dark-mode .profile-stat .lbl{color:#8C9AAE}
 .app.dark-mode .post-header-title{color:#FFF}
 .app.dark-mode .caption-input{background:#2C3A4A;border-color:#3A4A5C;color:#FFF}
 .app.dark-mode .caption-input::placeholder{color:#5A6A7A}
@@ -416,9 +415,13 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .comment-input-wrap{background:#2C3A4A}
 .app.dark-mode .post-more-btn{color:#A8B0BC!important}
 .app.dark-mode .post-type-btn:not(.active){background:#2C3A4A}
+.app.dark-mode .post-type-toggle{background:#2C3A4A}
 .app.dark-mode .hero{background:linear-gradient(135deg,#B83D6E,#3A90B0)}
 .app.dark-mode .feed-follow-btn.following{background:#3A4A5C!important;color:#8C9AAE!important}
 .app.dark-mode .feed-follow-btn:not(.following){background:#FF6B9D!important;color:#FFF!important}
+.app.dark-mode .posts-grid-title{color:#FFF}
+.app.dark-mode .feed-comments{border-color:#3A4A5C}
+.app.dark-mode .settings-item{border-color:#3A4A5C}
 
 /* ====== Splash Screen (Light & Airy) ====== */
 #splash{position:fixed;inset:0;z-index:99999;background:linear-gradient(180deg,#FFF8F9 0%,#FFF0F2 40%,#F0F8FF 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .7s ease,transform .7s cubic-bezier(.32,.94,.6,1);pointer-events:auto}
@@ -829,6 +832,7 @@ function savePosts(p){
 function login(){
   var u=document.getElementById('loginUser').value.trim();
   var p=document.getElementById('loginPass').value.trim();
+  if(!u||!p){document.getElementById('loginError').textContent='请输入用户名和密码';document.getElementById('loginError').style.display='block';return}
   var acc=testAccounts.find(function(a){return a.user===u&&a.pass===p});
   if(!acc){
     document.getElementById('loginError').style.display='block';
@@ -851,6 +855,13 @@ function login(){
 }
 function logout(){
   currentUser=null;
+  pendingPhotos=[];
+  document.getElementById('previewGrid').innerHTML='';
+  document.getElementById('photoPreview').style.display='none';
+  var pa0=document.querySelector('.photo-area');
+  if(pa0){pa0.style.height='';pa0.style.minHeight='';pa0.style.padding='';var paIcon0=pa0.querySelector('.pa-icon');if(paIcon0)paIcon0.style.display=''}
+  var paText0=document.querySelector('.photo-area .pa-text');
+  if(paText0)paText0.textContent='点击从相册选择照片';
   try{localStorage.removeItem('fuguang_last_user')}catch(e){}
   document.getElementById('loginUser').value='';
   document.getElementById('loginPass').value='';
@@ -1057,7 +1068,14 @@ function clearAllData(){
   if(!confirm('⚠️ 确定要清除所有数据吗？此操作不可撤销！'))return;
   try{localStorage.removeItem('fuguang_posts');localStorage.removeItem('fuguang_privacy');
   localStorage.removeItem('fuguang_notif');localStorage.removeItem('fuguang_dark');
-  localStorage.removeItem('fuguang_fontsize')}catch(e){}
+  localStorage.removeItem('fuguang_fontsize');localStorage.removeItem('fuguang_following');
+  localStorage.removeItem('fuguang_likes');localStorage.removeItem('fuguang_moods');
+  localStorage.removeItem('fuguang_last_user');localStorage.removeItem('fuguang_weather');
+  localStorage.removeItem('fuguang_viewing_user');
+  // Clear all per-user avatars and backgrounds
+  var allKeys=[];for(var k in localStorage){if(localStorage.hasOwnProperty(k))allKeys.push(k)}
+  allKeys.forEach(function(k){if(k.indexOf('fuguang_avatar_')===0||k.indexOf('fuguang_bg_')===0)localStorage.removeItem(k)})
+  }catch(e){}
   closeModal();
   showToast('✅ 所有数据已清除')
 }
@@ -1079,7 +1097,7 @@ function showAdminPanel(){
       postList+='<div style="background:'+(i%2===0?'rgba(0,0,0,.02)':'')+';padding:10px 12px;border-radius:10px;margin-bottom:8px;border:1px solid #E8ECF0">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
         '<div><span style="font-weight:600;color:#FF6B9D;font-size:13px">#'+p.id+'</span> '+
-        '<span style="font-weight:600;color:#2C3A4A;font-size:13px">'+(p.userName||'匿名')+'</span>'+
+        '<span style="font-weight:600;color:#2C3A4A;font-size:13px">'+escapeHtml(p.userName||'匿名')+'</span>'+
         '<span style="color:#8C9AAE;font-size:11px;margin-left:6px">'+timeAgo+'</span></div>'+
         '<button class="modal-btn modal-btn-danger" data-pid="'+p.id+'" style="padding:3px 10px;font-size:11px;width:auto;margin:0;flex-shrink:0;border-radius:10px">🗑 删除</button></div>'+
         '<div style="font-size:13px;color:#2C3A4A;line-height:1.5;white-space:pre-wrap;word-break:break-word">'+escapeHtml(displayText)+hasPhoto+'</div>'+
@@ -1161,33 +1179,42 @@ function showProfilePosts(){
   if(!list)return;
   var posts=getPosts().filter(function(p){return p.user===viewingUser.user});
   list.innerHTML='';
-  if(posts.length===0){list.innerHTML='<div class="feed-card-empty">还没有发布内容 ✨</div>';return}
+  var isOwn=currentUser&&viewingUser.user===currentUser.user;
+  if(posts.length===0){list.innerHTML='<div class="feed-card-empty">'+(isOwn?'还没有发布内容，去发布第一条芙光吧 ✨':'TA还没有发布内容 ✨')+'</div>';return}
   posts.forEach(function(p){list.appendChild(createFeedCard(p))});
   var title=document.getElementById('profilePostsTitle');
-  if(title)title.textContent=(viewingUser===currentUser?'我':'他/她')+'的发布';
+  if(title)title.textContent=(isOwn?'我':'他/她')+'的发布';
   showToast('📝 共 '+posts.length+' 条内容')
 }
 function showProfileLikes(){
-  if(!currentUser)return;
   var viewingUser=getProfileViewingUser()||currentUser;
+  if(!viewingUser)return;
   var list=document.getElementById('profilePostList');
   if(!list)return;
   var posts=getPosts().filter(function(p){return p.user===viewingUser.user&&p.likes>0}).sort(function(a,b){return(b.likes||0)-(a.likes||0)}).slice(0,20);
   list.innerHTML='';
-  if(posts.length===0){list.innerHTML='<div class="feed-card-empty">还没有获赞记录 ✨</div>';return}
+  var isOwn=currentUser&&viewingUser.user===currentUser.user;
+  if(posts.length===0){list.innerHTML='<div class="feed-card-empty">'+(isOwn?'还没有获赞记录 ✨':'TA还没有获赞记录 ✨')+'</div>';return}
   posts.forEach(function(p){list.appendChild(createFeedCard(p))});
+  var title=document.getElementById('profilePostsTitle');
+  if(title)title.textContent='获赞帖子';
   showToast('❤️ 获赞帖子')
 }
 function showProfileFollowing(){
-  showToast('👥 关注了 '+getFollowingCount()+' 人');
+  var viewingUser=getProfileViewingUser()||currentUser;
+  if(!viewingUser)return;
+  var isOwn=currentUser&&viewingUser.user===currentUser.user;
+  showToast('👥 '+(isOwn?'你':'TA')+'关注了 '+getFollowingCount()+' 人');
   var list=document.getElementById('profilePostList');
   if(!list)return;
   var following=getFollowing();
-  if(following.length===0){list.innerHTML='<div class="feed-card-empty">还没有关注任何人 ✨</div>';return}
+  if(following.length===0){list.innerHTML='<div class="feed-card-empty">'+(isOwn?'还没有关注任何人，去探索页发现更多有趣的人吧 ✨':'TA还没有关注任何人 ✨')+'</div>';return}
   var posts=getPosts().filter(function(p){return following.indexOf(p.user)!==-1});
   list.innerHTML='';
-  if(posts.length===0){list.innerHTML='<div class="feed-card-empty">关注的用户还没有发布内容 ✨</div>';return}
-  posts.forEach(function(p){list.appendChild(createFeedCard(p))})
+  if(posts.length===0){list.innerHTML='<div class="feed-card-empty">'+(isOwn?'你':'TA')+'关注的用户还没有发布内容 ✨</div>';return}
+  posts.forEach(function(p){list.appendChild(createFeedCard(p))});
+  var title=document.getElementById('profilePostsTitle');
+  if(title)title.textContent='关注动态'
 }
 
 // ====== Page Switching ======
@@ -1287,9 +1314,12 @@ function renderAllFeeds(){
   // Home page feed
   var homeFeed=document.getElementById('homeFeed');
   if(homeFeed)renderFeedList(homeFeed,posts,'home');
-  // Explore page feed - use active category
-  var activeCat=document.querySelector('.cat-tab.active');
-  if(activeCat){filterCat(activeCat,activeCat.textContent.trim());return}
+  // Explore page feed - only apply category filter if explore page is active
+  var explorePage=document.getElementById('pageExplore');
+  if(explorePage&&explorePage.classList.contains('active')){
+    var activeCat=document.querySelector('.cat-tab.active');
+    if(activeCat){filterCat(activeCat,activeCat.textContent.trim());return}
+  }
   var exploreFeed=document.getElementById('exploreFeed');
   if(exploreFeed)renderFeedList(exploreFeed,posts,'explore')
 }
@@ -1334,12 +1364,11 @@ function createFeedCard(p){
   var editInfo='';
   if(p.editedAt)editInfo=' · 编辑于'+getTimeAgo(p.editedAt);
   var isOwner=currentUser&&p.user===currentUser.user;
-  var isAdminUser=currentUser&&currentUser.isAdmin;
   var isFollowingUser=currentUser&&isFollowing(p.user);
   var canFollowUser=currentUser&&!isOwner;
   var html='<div class="feed-card-header">'+
     '<div class="feed-card-avatar" style="background:linear-gradient(135deg,'+(p.userColor||'#FF6B9D')+',#4FC3F7)"></div>'+
-    '<span class="feed-card-user">'+(p.userName||'芙光用户')+'</span>'+
+    '<span class="feed-card-user">'+escapeHtml(p.userName||'芙光用户')+'</span>'+
     '<span class="feed-card-time">'+timeAgo+editInfo+'</span>';
   if(canFollowUser){
     html+='<button class="feed-follow-btn'+(isFollowingUser?' following':'')+'" data-user="'+escapeHtml(p.user)+'" style="margin-left:8px;padding:3px 10px;border-radius:12px;border:none;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;'+(isFollowingUser?'background:#E8ECF0;color:#8C9AAE':'background:#FF6B9D;color:#FFF')+'">'+(isFollowingUser?'✓ 已关注':'＋ 关注')+'</button>'
@@ -1415,12 +1444,13 @@ function createFeedCard(p){
   // Send comment
   var sendBtn=d.querySelector('.comment-submit-btn');
   if(sendBtn)sendBtn.onclick=function(){
+    if(!currentUser){showToast('⚠️ 请先登录');return}
     var cd=d.querySelector('[data-comments-for="'+pid+'"]');if(!cd)return;
     var inp=cd.querySelector('.comment-text-input');if(!inp||!inp.value.trim())return;
     var text=inp.value.trim();
     var posts=getPosts(),pp=posts.find(function(x){return x.id===pid});if(!pp)return;
     if(!pp.commentList)pp.commentList=[];
-    var nc={name:currentUser?currentUser.name:'匿名',text:text,time:new Date().toISOString(),replies:[]};
+    var nc={name:currentUser.name,text:text,time:new Date().toISOString(),replies:[]};
     pp.commentList.push(nc);
     pp.comments=pp.commentList.length;savePosts(posts);
     inp.value='';
@@ -1448,19 +1478,20 @@ function createFeedCard(p){
   d.querySelectorAll('.reply-send').forEach(function(el){
     var ci=Number(el.getAttribute('data-idx'));
     el.onclick=function(){
+      if(!currentUser){showToast('⚠️ 请先登录');return}
       var area=el.parentNode.parentNode;
       if(!area||area.style.display!=='flex')return;
       var ri=area.querySelector('.reply-input');if(!ri||!ri.value.trim())return;
       var text=ri.value.trim();
       var posts=getPosts(),pp=posts.find(function(x){return x.id===pid});if(!pp||!pp.commentList||!pp.commentList[ci])return;
       if(!pp.commentList[ci].replies)pp.commentList[ci].replies=[];
-      pp.commentList[ci].replies.push({name:currentUser?currentUser.name:'匿名',text:text,time:new Date().toISOString()});
+      pp.commentList[ci].replies.push({name:currentUser.name,text:text,time:new Date().toISOString()});
       pp.comments=pp.commentList.length;savePosts(posts);
       ri.value='';area.style.display='none';
       var rl=area.nextElementSibling;
       if(rl){
         var re=document.createElement('div');re.className='feed-comment';re.style.marginLeft='24px';
-        re.innerHTML='<div style="width:20px;height:20px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#FF6B9D,#4FC3F7);display:inline-block;vertical-align:middle;margin-right:8px"></div><div style="display:inline-block;vertical-align:middle"><div style="font-size:12px;font-weight:600;color:#2C3A4A">'+(currentUser?currentUser.name:'匿名')+'</div><div style="font-size:12px;color:#3A4A5C">'+escapeHtml(text)+'</div><div style="font-size:10px;color:#B4BCC8">刚刚</div></div>';
+        re.innerHTML='<div class="feed-comment-avatar" style="width:20px;height:20px;min-width:20px;margin-right:8px;display:inline-block;vertical-align:middle"></div><div style="display:inline-block;vertical-align:middle"><div class="feed-comment-name" style="font-size:12px">'+currentUser.name+'</div><div class="feed-comment-text" style="font-size:12px">'+escapeHtml(text)+'</div><div class="feed-comment-time" style="font-size:10px">刚刚</div></div>';
         rl.appendChild(re)
       }
       document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+pp.comments});
@@ -1532,19 +1563,20 @@ function attachReplyEvents(container,pid){
   container.querySelectorAll('.reply-send').forEach(function(el){
     var ci=Number(el.getAttribute('data-idx'));
     el.onclick=function(){
+      if(!currentUser){showToast('⚠️ 请先登录');return}
       var area=el.parentNode.parentNode;
       if(!area||area.style.display!=='flex')return;
       var ri=area.querySelector('.reply-input');if(!ri||!ri.value.trim())return;
       var text=ri.value.trim();
       var posts=getPosts(),pp=posts.find(function(x){return x.id===pid});if(!pp||!pp.commentList||!pp.commentList[ci])return;
       if(!pp.commentList[ci].replies)pp.commentList[ci].replies=[];
-      pp.commentList[ci].replies.push({name:currentUser?currentUser.name:'匿名',text:text,time:new Date().toISOString()});
+      pp.commentList[ci].replies.push({name:currentUser.name,text:text,time:new Date().toISOString()});
       pp.comments=pp.commentList.length;savePosts(posts);
       ri.value='';area.style.display='none';
       var rl=area.nextElementSibling;
       if(rl){
         var re=document.createElement('div');re.className='feed-comment';re.style.marginLeft='24px';
-        re.innerHTML='<div style="width:20px;height:20px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#FF6B9D,#4FC3F7);display:inline-block;vertical-align:middle;margin-right:8px"></div><div style="display:inline-block;vertical-align:middle"><div style="font-size:12px;font-weight:600;color:#2C3A4A">'+(currentUser?currentUser.name:'匿名')+'</div><div style="font-size:12px;color:#3A4A5C">'+escapeHtml(text)+'</div><div style="font-size:10px;color:#B4BCC8">刚刚</div></div>';
+        re.innerHTML='<div class="feed-comment-avatar" style="width:20px;height:20px;min-width:20px;margin-right:8px;display:inline-block;vertical-align:middle"></div><div style="display:inline-block;vertical-align:middle"><div class="feed-comment-name" style="font-size:12px">'+currentUser.name+'</div><div class="feed-comment-text" style="font-size:12px">'+escapeHtml(text)+'</div><div class="feed-comment-time" style="font-size:10px">刚刚</div></div>';
         rl.appendChild(re)
       }
       document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+pp.comments});
@@ -1641,7 +1673,7 @@ function showPostDetail(pid){
   html+='<div class="detail-author" id="detailAuthorArea" style="cursor:pointer">'+
     '<div class="detail-avatar" style="background:linear-gradient(135deg,'+(pp.userColor||'#FF6B9D')+',#4FC3F7)"></div>'+
     '<div class="detail-author-info">'+
-    '<div class="detail-author-name">'+(pp.userName||'芙光用户')+'</div>'+
+    '<div class="detail-author-name">'+escapeHtml(pp.userName||'芙光用户')+'</div>'+
     '<div class="detail-author-time">'+timeAgo+editInfo+'</div></div>';
   if(canFollow){
     html+='<button class="detail-follow-btn'+(isFollower?' following':'')+'" id="detailFollowBtn">'+(isFollower?'✓ 已关注':'＋ 关注')+'</button>'
@@ -1677,7 +1709,13 @@ function showPostDetail(pid){
     html+='<div style="text-align:center;padding:20px;color:#8C9AAE;font-size:13px">还没有评论，来发表第一条吧 ✨</div>'
   }
   html+='</div></div>';
+  // Save scroll position before re-render
+  var prevScroll=detailEl.querySelector('.detail-scroll');
+  var scrollTop=prevScroll?prevScroll.scrollTop:0;
   detailEl.innerHTML=html;
+  // Restore scroll position
+  var newScroll=detailEl.querySelector('.detail-scroll');
+  if(newScroll)newScroll.scrollTop=scrollTop;
   // Bind all handlers via element.onclick
   var backBtn=document.getElementById('detailBackBtn');
   if(backBtn)backBtn.onclick=function(){switchPage(detailEl.getAttribute('data-back')||'pageHome')};
@@ -1703,13 +1741,14 @@ function showPostDetail(pid){
   };
   var sendBtn=document.getElementById('detailCommentSendBtn');
   if(sendBtn)sendBtn.onclick=function(){
+    if(!currentUser){showToast('⚠️ 请先登录');return}
     var inp=document.getElementById('detailCommentInput');
     if(!inp||!inp.value.trim())return;
     var text=inp.value.trim();
     var ps=getPosts(),pp2=ps.find(function(x){return x.id===pid});
     if(!pp2)return;
     if(!pp2.commentList)pp2.commentList=[];
-    pp2.commentList.push({name:currentUser?currentUser.name:'匿名',text:text,time:new Date().toISOString(),replies:[]});
+    pp2.commentList.push({name:currentUser.name,text:text,time:new Date().toISOString(),replies:[]});
     pp2.comments=pp2.commentList.length;savePosts(ps);
     inp.value='';
     showPostDetail(pid);
@@ -1729,6 +1768,7 @@ function showPostDetail(pid){
   detailEl.querySelectorAll('.detail-reply-send-btn').forEach(function(el){
     var ci=Number(el.getAttribute('data-ci'));
     el.onclick=function(){
+      if(!currentUser){showToast('⚠️ 请先登录');return}
       var area=document.getElementById('detailReplyArea'+ci);
       if(!area||area.style.display!=='flex')return;
       var ri=area.querySelector('.reply-input');if(!ri||!ri.value.trim())return;
@@ -1736,7 +1776,7 @@ function showPostDetail(pid){
       var ps=getPosts(),pp2=ps.find(function(x){return x.id===pid});
       if(!pp2||!pp2.commentList||!pp2.commentList[ci])return;
       if(!pp2.commentList[ci].replies)pp2.commentList[ci].replies=[];
-      pp2.commentList[ci].replies.push({name:currentUser?currentUser.name:'匿名',text:text,time:new Date().toISOString()});
+      pp2.commentList[ci].replies.push({name:currentUser.name,text:text,time:new Date().toISOString()});
       pp2.comments=pp2.commentList.length;savePosts(ps);
       ri.value='';
       area.style.display='none';
@@ -1772,14 +1812,6 @@ function getFollowingCount(){return getFollowing().length}
 // ====== Like Dedup ======
 function getLikedPosts(){try{return JSON.parse(localStorage.getItem('fuguang_likes')||'[]')}catch(e){return[]}}
 function saveLikedPosts(l){try{localStorage.setItem('fuguang_likes',JSON.stringify(l))}catch(e){}}
-// Update stats with follow count
-var _origUpdateProfileStats=updateProfileStats;
-updateProfileStats=function(){
-  if(_origUpdateProfileStats)_origUpdateProfileStats();
-  if(!currentUser)return;
-  var sf=document.getElementById('statFollowing');
-  if(sf)sf.textContent=getFollowingCount().toLocaleString()
-};
 
 function showNotifDetail(title,text){
   showModal('📬 '+title,
@@ -1812,6 +1844,14 @@ function confirmDeleteAccount(){
   try{localStorage.removeItem('fuguang_following')}catch(e){}
   // Clear avatar
   try{localStorage.removeItem('fuguang_avatar_'+username)}catch(e){}
+  // Clear background
+  try{localStorage.removeItem('fuguang_bg_'+username)}catch(e){}
+  // Clear moods
+  try{localStorage.removeItem('fuguang_moods')}catch(e){}
+  // Clear weather cache
+  try{localStorage.removeItem('fuguang_weather')}catch(e){}
+  // Clear viewing user
+  try{localStorage.removeItem('fuguang_viewing_user')}catch(e){}
   // Clear settings
   try{localStorage.removeItem('fuguang_privacy')}catch(e){}
   try{localStorage.removeItem('fuguang_notif')}catch(e){}
@@ -1832,7 +1872,9 @@ function confirmDeleteAccount(){
   showToast('✅ 账号已注销，所有数据已清除')
 }
 function getTimeAgo(iso){
-  var diff=Math.floor((Date.now()-new Date(iso).getTime())/1000);
+  var t=new Date(iso).getTime();
+  if(isNaN(t))return'未知时间';
+  var diff=Math.floor((Date.now()-t)/1000);
   if(diff<60)return'刚刚';
   if(diff<3600)return Math.floor(diff/60)+'分钟前';
   if(diff<86400)return Math.floor(diff/3600)+'小时前';
@@ -1947,10 +1989,10 @@ function searchContent(q){
       html+='<div style="font-size:12px;color:#8C9AAE;padding:6px 0 4px;font-weight:600">👤 用户</div>';
       matchedUsers.slice(0,8).forEach(function(a){
         var userPosts=posts.filter(function(p){return p.user===a.user}).length;
-        html+='<div class="notif-item" style="cursor:pointer;align-items:center" onclick="(function(){switchPage(\'pageExplore\');var inp=document.getElementById(\'searchInput\');if(inp){inp.value=\''+a.user+'\';searchContent(inp.value)}})()">'+
-          '<div class="notif-avatar" style="background:linear-gradient(135deg,'+a.color+',#4FC3F7);display:flex;align-items:center;justify-content:center;color:#FFF;font-weight:700;font-size:14px">'+a.name.charAt(0)+'</div>'+
-          '<div class="notif-text"><div class="notif-name">'+a.name+' <span style="font-weight:400;font-size:11px;color:#8C9AAE">@'+a.id+'</span></div>'+
-          '<div class="notif-msg">'+a.bio+' · '+userPosts+'篇内容</div></div>'+
+        html+='<div class="notif-item" style="cursor:pointer;align-items:center" onclick="(function(){switchPage(\'pageExplore\');var inp=document.getElementById(\'searchInput\');if(inp){inp.value=\''+a.user.replace(/'/g,"\\'")+'\';searchContent(inp.value)}})()">'+
+          '<div class="notif-avatar" style="background:linear-gradient(135deg,'+a.color+',#4FC3F7);display:flex;align-items:center;justify-content:center;color:#FFF;font-weight:700;font-size:14px">'+escapeHtml(a.name.charAt(0))+'</div>'+
+          '<div class="notif-text"><div class="notif-name">'+escapeHtml(a.name)+' <span style="font-weight:400;font-size:11px;color:#8C9AAE">@'+escapeHtml(a.id)+'</span></div>'+
+          '<div class="notif-msg">'+escapeHtml(a.bio)+' · '+userPosts+'篇内容</div></div>'+
           '<span style="color:#FF6B9D;font-size:12px">查看 ›</span></div>'
       });
     }
@@ -1970,7 +2012,7 @@ function searchContent(q){
         var preview=(p.text||'[图片]').substring(0,40);
         var author=testAccounts.find(function(a){return a.user===p.user});
         var atId=author?' @'+author.id:'';
-        html+='<div class="notif-item" onclick="showPostDetail('+p.id+')" style="cursor:pointer"><div class="notif-text"><div class="notif-name">'+(p.userName||'匿名')+atId+'</div><div class="notif-msg">'+escapeHtml(preview)+((p.photos&&p.photos.length>0)||p.photo?' 📷':'')+'</div><div style="font-size:10px;color:#B4BCC8;margin-top:2px">'+getTimeAgo(p.time)+' · ❤️ '+(p.likes||0)+' · 💬 '+(p.commentList||[]).length+'</div></div></div>'
+        html+='<div class="notif-item" onclick="showPostDetail('+p.id+')" style="cursor:pointer"><div class="notif-text"><div class="notif-name">'+escapeHtml(p.userName||'匿名')+atId+'</div><div class="notif-msg">'+escapeHtml(preview)+((p.photos&&p.photos.length>0)||p.photo?' 📷':'')+'</div><div style="font-size:10px;color:#B4BCC8;margin-top:2px">'+getTimeAgo(p.time)+' · ❤️ '+(p.likes||0)+' · 💬 '+(p.commentList||[]).length+'</div></div></div>'
       });
     }
 
@@ -2129,8 +2171,8 @@ function updateProfileDisplay(acc){
   var bgEl=document.getElementById('profileCoverBg');
   if(bgEl){
     var bgData='';try{bgData=localStorage.getItem('fuguang_bg_'+acc.user)||''}catch(e){}
-    if(bgData){bgEl.classList.add('has-bg');bgEl.style.backgroundImage='url('+bgData+')';bgEl.onclick=viewProfileBg}
-    else{bgEl.classList.remove('has-bg');bgEl.style.backgroundImage='';bgEl.style.background='linear-gradient(135deg,'+acc.color+',#4FC3F7)';bgEl.onclick=null}
+    if(bgData){bgEl.classList.add('has-bg');bgEl.style.backgroundImage='url('+bgData+')';bgEl.onclick=viewProfileBg;bgEl.style.cursor='pointer'}
+    else{bgEl.classList.remove('has-bg');bgEl.style.backgroundImage='';bgEl.style.background='linear-gradient(135deg,'+acc.color+',#4FC3F7)';bgEl.onclick=null;bgEl.style.cursor='default'}
   }
   // Avatar
   var avatarEl=document.getElementById('profileCoverAvatar');
