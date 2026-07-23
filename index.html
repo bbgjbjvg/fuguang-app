@@ -1410,7 +1410,7 @@ function createFeedCard(p){
         '<div class="feed-comment-time">'+getTimeAgo(c.time)+' <span class="reply-toggle" data-post-id="'+p.id+'" data-idx="'+i+'" style="margin-left:12px;color:#4FC3F7;cursor:pointer;font-size:clamp(9px,1.6vw,11px)">回复</span></div>'+
         '<div class="reply-area" style="display:none;margin-top:6px">'+
         '<div style="display:flex;gap:6px">'+
-        '<input type="text" class="reply-input" placeholder="回复 '+escapeHtml(c.name||'匿名')+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA;color:#2C3A4A">'+
+        '<input type="text" class="reply-input" placeholder="回复 '+escapeHtml(c.name||'匿名')+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA!important;color:#2C3A4A!important">'+
         '<button class="reply-send" data-post-id="'+p.id+'" data-idx="'+i+'" style="border:none;background:#4FC3F7;color:#FFF;border-radius:14px;padding:4px 12px;font-size:clamp(10px,1.8vw,12px);cursor:pointer;flex-shrink:0">回复</button></div></div>'+
         '<div class="replies-list">'+(renderReplies(c.replies))+'</div></div></div>'
     });
@@ -1452,7 +1452,7 @@ function createFeedCard(p){
     inp.value='';
     var ci=pp.commentList.length-1;
     var ce=document.createElement('div');ce.className='feed-comment';
-    ce.innerHTML='<div class="feed-comment-avatar"></div><div class="feed-comment-body"><div class="feed-comment-name">'+escapeHtml(nc.name)+'</div><div class="feed-comment-text">'+escapeHtml(nc.text)+'</div><div class="feed-comment-time">刚刚 <span class="reply-toggle" data-post-id="'+pid+'" data-idx="'+ci+'" style="margin-left:12px;color:#4FC3F7;cursor:pointer;font-size:clamp(9px,1.6vw,11px)">回复</span></div><div class="reply-area" style="display:none;margin-top:6px"><div style="display:flex;gap:6px"><input type="text" class="reply-input" placeholder="回复 '+escapeHtml(nc.name)+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA;color:#2C3A4A"><button class="reply-send" data-post-id="'+pid+'" data-idx="'+ci+'" style="border:none;background:#4FC3F7;color:#FFF;border-radius:14px;padding:4px 12px;font-size:clamp(10px,1.8vw,12px);cursor:pointer;flex-shrink:0">回复</button></div></div><div class="replies-list"></div></div></div>';
+    ce.innerHTML='<div class="feed-comment-avatar"></div><div class="feed-comment-body"><div class="feed-comment-name">'+escapeHtml(nc.name)+'</div><div class="feed-comment-text">'+escapeHtml(nc.text)+'</div><div class="feed-comment-time">刚刚 <span class="reply-toggle" data-post-id="'+pid+'" data-idx="'+ci+'" style="margin-left:12px;color:#4FC3F7;cursor:pointer;font-size:clamp(9px,1.6vw,11px)">回复</span></div><div class="reply-area" style="display:none;margin-top:6px"><div style="display:flex;gap:6px"><input type="text" class="reply-input" placeholder="回复 '+escapeHtml(nc.name)+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA!important;color:#2C3A4A!important"><button class="reply-send" data-post-id="'+pid+'" data-idx="'+ci+'" style="border:none;background:#4FC3F7;color:#FFF;border-radius:14px;padding:4px 12px;font-size:clamp(10px,1.8vw,12px);cursor:pointer;flex-shrink:0">回复</button></div></div><div class="replies-list"></div></div></div>';
     cd.insertBefore(ce,cd.querySelector('.comment-input-wrap'));
     // Attach reply events for the new comment
     attachReplyEvents(ce,pid);
@@ -1482,7 +1482,7 @@ function createFeedCard(p){
       if(!pp.commentList[ci].replies)pp.commentList[ci].replies=[];
       pp.commentList[ci].replies.push({name:currentUser?currentUser.name:'匿名',text:text,time:new Date().toISOString()});
       pp.comments=pp.commentList.length;savePosts(posts);
-      ri.value='';
+      ri.value='';area.style.display='none';
       var rl=area.nextElementSibling;
       if(rl){
         var re=document.createElement('div');re.className='feed-comment';re.style.marginLeft='24px';
@@ -1559,7 +1559,7 @@ function attachReplyEvents(container,pid){
       if(!pp.commentList[ci].replies)pp.commentList[ci].replies=[];
       pp.commentList[ci].replies.push({name:currentUser?currentUser.name:'匿名',text:text,time:new Date().toISOString()});
       pp.comments=pp.commentList.length;savePosts(posts);
-      ri.value='';
+      ri.value='';area.style.display='none';
       var rl=area.nextElementSibling;
       if(rl){
         var re=document.createElement('div');re.className='feed-comment';re.style.marginLeft='24px';
@@ -1685,6 +1685,10 @@ function showPostDetail(pid){
         '<div class="feed-comment-name">'+escapeHtml(c.name||'匿名')+'</div>'+
         '<div class="feed-comment-text">'+escapeHtml(c.text)+'</div>'+
         '<div class="feed-comment-time">'+getTimeAgo(c.time)+' <span style="color:#4FC3F7;cursor:pointer" class="detail-reply-btn" data-ci="'+i+'">回复</span></div>'+
+        '<div class="reply-area" style="display:none;margin-top:6px" id="detailReplyArea'+i+'">'+
+        '<div style="display:flex;gap:6px">'+
+        '<input type="text" class="reply-input" placeholder="回复 '+escapeHtml(c.name||'匿名')+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA!important;color:#2C3A4A!important">'+
+        '<button class="detail-reply-send-btn" data-post-id="'+pid+'" data-ci="'+i+'" style="border:none;background:#4FC3F7;color:#FFF;border-radius:14px;padding:4px 12px;font-size:clamp(10px,1.8vw,12px);cursor:pointer;flex-shrink:0">回复</button></div></div>'+
         '<div class="replies-list" id="detailReplies'+i+'">'+(renderReplies(c.replies))+'</div></div></div>'
     });
   }else{
@@ -1731,15 +1735,26 @@ function showPostDetail(pid){
   detailEl.querySelectorAll('.detail-reply-btn').forEach(function(el){
     el.onclick=function(){
       var ci=Number(this.getAttribute('data-ci'));
-      var rl=document.getElementById('detailReplies'+ci);
-      var name=currentUser?currentUser.name:'匿名';
-      var text=prompt('回复 '+name+'：');
-      if(!text||!text.trim())return;
+      var area=document.getElementById('detailReplyArea'+ci);
+      if(!area)return;
+      area.style.display=area.style.display==='none'||!area.style.display?'flex':'none';
+      if(area.style.display==='flex'){var ri=area.querySelector('.reply-input');if(ri)ri.focus()}
+    }
+  });
+  detailEl.querySelectorAll('.detail-reply-send-btn').forEach(function(el){
+    var ci=Number(el.getAttribute('data-ci'));
+    el.onclick=function(){
+      var area=document.getElementById('detailReplyArea'+ci);
+      if(!area||area.style.display!=='flex')return;
+      var ri=area.querySelector('.reply-input');if(!ri||!ri.value.trim())return;
+      var text=ri.value.trim();
       var ps=getPosts(),pp2=ps.find(function(x){return x.id===pid});
       if(!pp2||!pp2.commentList||!pp2.commentList[ci])return;
       if(!pp2.commentList[ci].replies)pp2.commentList[ci].replies=[];
-      pp2.commentList[ci].replies.push({name:name,text:text.trim(),time:new Date().toISOString()});
+      pp2.commentList[ci].replies.push({name:currentUser?currentUser.name:'匿名',text:text,time:new Date().toISOString()});
       pp2.comments=pp2.commentList.length;savePosts(ps);
+      ri.value='';
+      area.style.display='none';
       showPostDetail(pid);
       renderAllFeeds();
       renderProfilePosts();
@@ -2032,11 +2047,11 @@ var pendingPhotos=[];
 function previewPhoto(input){
   var files=input.files;
   if(!files||files.length===0)return;
-  if(files.length>9){alert('⚠️ 最多只能选择9张照片');return}
-  pendingPhotos=[];
+  var newCount=pendingPhotos.length+files.length;
+  if(newCount>9){alert('⚠️ 最多只能选择9张照片，当前已有'+pendingPhotos.length+'张，还能选'+(9-pendingPhotos.length)+'张');return}
   var grid=document.getElementById('previewGrid');
-  grid.innerHTML='';
   var loaded=0;
+  var totalAfter=pendingPhotos.length+files.length;
   Array.from(files).forEach(function(file){
     var reader=new FileReader();
     reader.onload=function(e){
@@ -2061,6 +2076,8 @@ function previewPhoto(input){
           var paIcon2=pa2.querySelector('.pa-icon');
           if(paIcon2)paIcon2.style.display='';
           document.querySelector('.photo-area .pa-text').textContent='点击从相册选择照片'
+        }else{
+          document.querySelector('.photo-area .pa-text').textContent='已选择 '+pendingPhotos.length+' 张照片（点击继续添加）'
         }
       };
       wrapper.appendChild(img);wrapper.appendChild(del);grid.appendChild(wrapper);
@@ -2070,7 +2087,7 @@ function previewPhoto(input){
         var pa=document.querySelector('.photo-area');
         pa.style.height='auto';pa.style.minHeight='auto';pa.style.padding='10px';
         pa.querySelector('.pa-icon').style.display='none';
-        document.querySelector('.photo-area .pa-text').textContent='已选择 '+files.length+' 张照片（点击更换）'
+        document.querySelector('.photo-area .pa-text').textContent='已选择 '+totalAfter+' 张照片（点击继续添加）'
       }
     };
     reader.readAsDataURL(file)
@@ -2122,6 +2139,9 @@ function showUserProfile(username){
 }
 function updateProfileDisplay(acc){
   var isOwn=currentUser&&acc.user===currentUser.user;
+  // Hide back button on own profile
+  var backBtn=document.querySelector('#pageProfile .back-btn');
+  if(backBtn)backBtn.style.display=isOwn?'none':'';
   // Update title
   var title=document.getElementById('profilePageTitle');
   if(title){title.textContent=isOwn?'':acc.name+'的主页';title.style.display=isOwn?'none':''}
