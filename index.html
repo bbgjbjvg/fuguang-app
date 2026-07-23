@@ -1291,7 +1291,9 @@ function updateProfileStats(){
   var sp=document.getElementById('statPosts'),sl=document.getElementById('statLikes'),sf=document.getElementById('statFollowing');
   if(sp)sp.textContent=viewingPosts.toLocaleString();
   if(sl)sl.textContent=totalLikes>999?Math.round(totalLikes/1000*10)/10+'k':totalLikes.toString();
-  if(sf)sf.textContent=(viewingUser.stats&&viewingUser.stats.following?viewingUser.stats.following:getFollowingCount()).toLocaleString();
+  // Following count: for current user show actual following, for others show hardcoded stats
+  var isOwnProfile=currentUser&&viewingUser.user===currentUser.user;
+  if(sf)sf.textContent=(isOwnProfile?getFollowingCount():(viewingUser.stats&&viewingUser.stats.following?viewingUser.stats.following:0)).toLocaleString();
   // Old fallback
   var nums=document.querySelectorAll('#pageProfile .profile-stat .num');
   if(nums[0]&&!sp)nums[0].textContent=viewingPosts.toLocaleString();
@@ -1808,7 +1810,15 @@ function showPostDetail(pid){
   var actualComments=(pp.commentList||[]).length;
   var isFollower=currentUser&&isFollowing(pp.user);
   var canFollow=currentUser&&pp.user!==currentUser.user;
-  var backId=document.querySelector('.page.active')?document.querySelector('.page.active').id:'pageHome';
+  // Preserve back reference when re-rendering same post (e.g. after adding comment)
+  var currentPid=detailEl.getAttribute('data-post-id');
+  var isSamePost=currentPid==String(pid);
+  var backId;
+  if(isSamePost&&detailEl.getAttribute('data-back')){
+    backId=detailEl.getAttribute('data-back');
+  }else{
+    backId=document.querySelector('.page.active')?document.querySelector('.page.active').id:'pageHome';
+  }
   detailEl.setAttribute('data-back',backId);
   var html='<div class="detail-header">'+
     '<button class="back-btn" id="detailBackBtn">〈 返回</button>'+
