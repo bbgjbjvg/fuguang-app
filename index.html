@@ -1410,7 +1410,7 @@ function createFeedCard(p){
         '<div class="feed-comment-time">'+getTimeAgo(c.time)+' <span class="reply-toggle" data-post-id="'+p.id+'" data-idx="'+i+'" style="margin-left:12px;color:#4FC3F7;cursor:pointer;font-size:clamp(9px,1.6vw,11px)">回复</span></div>'+
         '<div class="reply-area" style="display:none;margin-top:6px">'+
         '<div style="display:flex;gap:6px">'+
-        '<input type="text" class="reply-input" placeholder="回复 '+escapeHtml(c.name||'匿名')+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA!important;color:#2C3A4A!important">'+
+        '<input type="text" class="reply-input" placeholder="回复 '+escapeHtml(c.name||'匿名')+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA;color:#2C3A4A">'+
         '<button class="reply-send" data-post-id="'+p.id+'" data-idx="'+i+'" style="border:none;background:#4FC3F7;color:#FFF;border-radius:14px;padding:4px 12px;font-size:clamp(10px,1.8vw,12px);cursor:pointer;flex-shrink:0">回复</button></div></div>'+
         '<div class="replies-list">'+(renderReplies(c.replies))+'</div></div></div>'
     });
@@ -1452,7 +1452,7 @@ function createFeedCard(p){
     inp.value='';
     var ci=pp.commentList.length-1;
     var ce=document.createElement('div');ce.className='feed-comment';
-    ce.innerHTML='<div class="feed-comment-avatar"></div><div class="feed-comment-body"><div class="feed-comment-name">'+escapeHtml(nc.name)+'</div><div class="feed-comment-text">'+escapeHtml(nc.text)+'</div><div class="feed-comment-time">刚刚 <span class="reply-toggle" data-post-id="'+pid+'" data-idx="'+ci+'" style="margin-left:12px;color:#4FC3F7;cursor:pointer;font-size:clamp(9px,1.6vw,11px)">回复</span></div><div class="reply-area" style="display:none;margin-top:6px"><div style="display:flex;gap:6px"><input type="text" class="reply-input" placeholder="回复 '+escapeHtml(nc.name)+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA!important;color:#2C3A4A!important"><button class="reply-send" data-post-id="'+pid+'" data-idx="'+ci+'" style="border:none;background:#4FC3F7;color:#FFF;border-radius:14px;padding:4px 12px;font-size:clamp(10px,1.8vw,12px);cursor:pointer;flex-shrink:0">回复</button></div></div><div class="replies-list"></div></div></div>';
+    ce.innerHTML='<div class="feed-comment-avatar"></div><div class="feed-comment-body"><div class="feed-comment-name">'+escapeHtml(nc.name)+'</div><div class="feed-comment-text">'+escapeHtml(nc.text)+'</div><div class="feed-comment-time">刚刚 <span class="reply-toggle" data-post-id="'+pid+'" data-idx="'+ci+'" style="margin-left:12px;color:#4FC3F7;cursor:pointer;font-size:clamp(9px,1.6vw,11px)">回复</span></div><div class="reply-area" style="display:none;margin-top:6px"><div style="display:flex;gap:6px"><input type="text" class="reply-input" placeholder="回复 '+escapeHtml(nc.name)+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA;color:#2C3A4A"><button class="reply-send" data-post-id="'+pid+'" data-idx="'+ci+'" style="border:none;background:#4FC3F7;color:#FFF;border-radius:14px;padding:4px 12px;font-size:clamp(10px,1.8vw,12px);cursor:pointer;flex-shrink:0">回复</button></div></div><div class="replies-list"></div></div></div>';
     cd.insertBefore(ce,cd.querySelector('.comment-input-wrap'));
     // Attach reply events for the new comment
     attachReplyEvents(ce,pid);
@@ -1687,7 +1687,7 @@ function showPostDetail(pid){
         '<div class="feed-comment-time">'+getTimeAgo(c.time)+' <span style="color:#4FC3F7;cursor:pointer" class="detail-reply-btn" data-ci="'+i+'">回复</span></div>'+
         '<div class="reply-area" style="display:none;margin-top:6px" id="detailReplyArea'+i+'">'+
         '<div style="display:flex;gap:6px">'+
-        '<input type="text" class="reply-input" placeholder="回复 '+escapeHtml(c.name||'匿名')+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA!important;color:#2C3A4A!important">'+
+        '<input type="text" class="reply-input" placeholder="回复 '+escapeHtml(c.name||'匿名')+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA;color:#2C3A4A">'+
         '<button class="detail-reply-send-btn" data-post-id="'+pid+'" data-ci="'+i+'" style="border:none;background:#4FC3F7;color:#FFF;border-radius:14px;padding:4px 12px;font-size:clamp(10px,1.8vw,12px);cursor:pointer;flex-shrink:0">回复</button></div></div>'+
         '<div class="replies-list" id="detailReplies'+i+'">'+(renderReplies(c.replies))+'</div></div></div>'
     });
@@ -1926,7 +1926,7 @@ function togglePostMode(el,mode){
   document.getElementById('photoMode').style.display=mode==='photo'?'block':'none';
   document.getElementById('textMode').style.display=mode==='text'?'block':'none';
   document.getElementById('postBtn').textContent=mode==='photo'?'✦ 发流光':'✦ 写拾光';
-  if(mode==='photo'){document.getElementById('photoPreview').style.display='none';pendingPhotos=[];document.getElementById('previewGrid').innerHTML='';var pa3=document.querySelector('.photo-area');pa3.style.height='';pa3.style.minHeight='';pa3.style.padding='';var paIcon3=pa3.querySelector('.pa-icon');if(paIcon3)paIcon3.style.display='';document.querySelector('.photo-area .pa-text').textContent='点击从相册选择照片'}
+  document.getElementById('photoPreview').style.display='none';pendingPhotos=[];document.getElementById('previewGrid').innerHTML='';var pa3=document.querySelector('.photo-area');pa3.style.height='';pa3.style.minHeight='';pa3.style.padding='';var paIcon3=pa3.querySelector('.pa-icon');if(paIcon3)paIcon3.style.display='';document.querySelector('.photo-area .pa-text').textContent='点击从相册选择照片'
 }
 function updateCount(t){
   document.getElementById('charCount').textContent=t.value.length
