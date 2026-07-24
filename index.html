@@ -340,6 +340,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .detail-comment-input button{border:none;background:linear-gradient(135deg,#FF6B9D,#4FC3F7);color:#FFF;border-radius:20px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;flex-shrink:0}
 .detail-comment{padding:12px 0;border-bottom:1px solid #E8ECF0;display:flex;gap:8px;align-items:flex-start}
 .detail-comment:last-child{border-bottom:none}
+.detail-comment-time{font-size:clamp(9px,1.5vw,10px);color:#8C9AAE;margin-top:2px}
 
 .app.dark-mode #pagePostDetail{background:#1C1C1E}
 .app.dark-mode .detail-header{border-color:#3A4A5C}
@@ -357,6 +358,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .detail-comment-input input::placeholder{color:#5A6A7A}
 .app.dark-mode .detail-comment-input button{background:linear-gradient(135deg,#FF6B9D,#4FC3F7);color:#FFF}
 .app.dark-mode .detail-comment{border-color:#3A4A5C}
+.app.dark-mode .detail-comment-time{color:#5A6A7A}
 .app.dark-mode .detail-comments-section .replies-list{color:#E0E6EC}
 .app.dark-mode .detail-avatar{border:2px solid #3A4A5C}
 .app.dark-mode .back-btn{color:#FF6B9D}
@@ -889,8 +891,9 @@ function seedPostsIfEmpty(){
       {name:'光影旅人',id:'fuguang_lvren',text:'太棒了！',time:new Date(s.time+3600000).toISOString(),replies:[]},
       {name:'日落收集家',id:'fuguang_riluo',text:'同感 🙌',time:new Date(s.time+7200000).toISOString(),replies:[]}
     ];
+    // Use post time as id base so id ordering matches displayed time
     seedPosts.push({
-      id:Date.now()-3600000*72+i*3600000,
+      id:s.time+i,
       user:s.user,
       userName:s.name,
       userColor:s.color,
@@ -900,7 +903,7 @@ function seedPostsIfEmpty(){
       time:new Date(s.time).toISOString(),
       likes:Math.floor(Math.random()*50)+5,
       commentList:commentList,
-      comments:commentList.length
+      comments:countAllComments({commentList:commentList})
     })
   });
   savePosts(seedPosts)
@@ -1144,7 +1147,13 @@ function showStorageSettings(){
   posts.forEach(function(p){
     if(p.photo)totalSize+=p.photo.length*0.75;
     if(p.photos){p.photos.forEach(function(ph){totalSize+=ph.length*0.75})}
-    if(p.text)totalSize+=p.text.length
+    if(p.text)totalSize+=p.text.length;
+    if(p.commentList){
+      p.commentList.forEach(function(c){
+        if(c.text)totalSize+=c.text.length;
+        if(c.replies){c.replies.forEach(function(r){if(r.text)totalSize+=r.text.length})}
+      })
+    }
   });
   // Also include avatars and backgrounds in storage
   for(var i=0;i<localStorage.length;i++){
@@ -1248,8 +1257,31 @@ function clearAllData(){
   var allKeys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k)allKeys.push(k)}
   allKeys.forEach(function(k){if(k.indexOf('fuguang_avatar_')===0||k.indexOf('fuguang_bg_')===0||k.indexOf('fuguang_likes_')===0||k.indexOf('fuguang_moods_')===0)localStorage.removeItem(k)})
   }catch(e){}
+  // Reset post-page UI state to avoid stale preview after data wipe
+  pendingPhotos=[];
+  try{var pg=document.getElementById('previewGrid');if(pg)pg.innerHTML='';var pp=document.getElementById('photoPreview');if(pp)pp.style.display='none';var pa=document.querySelector('.photo-area');if(pa){pa.style.height='';pa.style.minHeight='';pa.style.padding='';var paIcon=pa.querySelector('.pa-icon');if(paIcon)paIcon.style.display=''}var paText=document.querySelector('.photo-area .pa-text');if(paText)paText.textContent='点击从相册选择照片';var cap=document.getElementById('photoCaption');if(cap)cap.value='';var ta=document.getElementById('postTextArea');if(ta)ta.value='';var cc=document.getElementById('charCount');if(cc)cc.textContent='0'}catch(e){}
+  // Reset post type toggle back to photo mode
+  try{var ptBtn=document.querySelector('.post-type-btn.active');if(ptBtn)ptBtn.classList.remove('active');var firstBtn=document.querySelector('.post-type-btn');if(firstBtn)firstBtn.classList.add('active');var pm=document.getElementById('photoMode');if(pm)pm.style.display='block';var tm=document.getElementById('textMode');if(tm)tm.style.display='none';var postBtn=document.getElementById('postBtn');if(postBtn)postBtn.textContent='✦ 发流光'}catch(e){}
+  // Reset search state on explore page
+  try{var si=document.getElementById('searchInput');if(si)si.value='';var r=document.getElementById('searchResults');if(r)r.style.display='none';var st=document.getElementById('sectionTitle');if(st)st.style.display='block';var g=document.getElementById('exploreGrid');if(g)g.style.display='block';var ef=document.getElementById('exploreFeed');if(ef&&ef.parentNode)ef.parentNode.style.display=''}catch(e){}
+  // Clear active tag pills
+  try{var tagGrid=document.getElementById('exploreGrid');if(tagGrid)tagGrid.querySelectorAll('.tag-selected').forEach(function(p){p.classList.remove('tag-selected')})}catch(e){}
+  // Reset category tabs back to default (推荐)
+  try{document.querySelectorAll('.cat-tab').forEach(function(t){t.classList.remove('active')});var firstCat=document.querySelector('.cat-tab');if(firstCat)firstCat.classList.add('active')}catch(e){}
+  // Reset detail page state
+  try{var detailEl=document.getElementById('pagePostDetail');if(detailEl){detailEl.innerHTML='';detailEl.removeAttribute('data-post-id');detailEl.removeAttribute('data-back')}}catch(e){}
+  // Reset profile viewing user
+  try{saveProfileViewingUser(null)}catch(e){}
+  // Reset notification/filter tabs to default
+  try{document.querySelectorAll('.notif-tab').forEach(function(t){t.classList.remove('active')});var firstNotifTab=document.querySelector('.notif-tab');if(firstNotifTab)firstNotifTab.classList.add('active');document.querySelectorAll('.notif-item').forEach(function(i){i.style.display=i.dataset.type==='dm'?'flex':'none'})}catch(e){}
+  // Reset mood buttons
+  try{document.querySelectorAll('.mood-btn').forEach(function(b){b.classList.remove('mood-active')})}catch(e){}
+  // Reset hero stats display to dashes
+  try{['heroTodayPosts','heroTodayLikes','heroTodayComments'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent='-'});var streak=document.getElementById('heroStreakBadge');if(streak){streak.textContent='🔥 0天';streak.style.display='none'}}catch(e){}
   closeModal();
   renderAllFeeds();renderProfilePosts();updateProfileStats();
+  // Navigate back to home to show clean state
+  try{switchPage('pageHome')}catch(e){}
   showToast('✅ 所有数据已清除')
 }
 function showAdminPanel(){
@@ -1344,7 +1376,7 @@ function updateProfileStats(){
   var isOwnProfile=currentUser&&viewingUser.user===currentUser.user;
   if(sf)sf.textContent=(isOwnProfile?getFollowingCount():(viewingUser.stats&&viewingUser.stats.following?viewingUser.stats.following:0)).toLocaleString()
 }
-function showProfilePosts(){
+function showProfilePosts(silent){
   var viewingUser=getProfileViewingUser()||currentUser;
   if(!viewingUser)return;
   var list=document.getElementById('profilePostList');
@@ -1356,7 +1388,7 @@ function showProfilePosts(){
   posts.forEach(function(p){list.appendChild(createFeedCard(p))});
   var title=document.getElementById('profilePostsTitle');
   if(title)title.textContent=(isOwn?'我':'他/她')+'的发布';
-  showToast('📝 共 '+posts.length+' 条内容')
+  if(!silent)showToast('📝 共 '+posts.length+' 条内容')
 }
 function showProfileLikes(){
   var viewingUser=getProfileViewingUser()||currentUser;
@@ -1469,8 +1501,11 @@ function postContent(){
   }
 
   var posts=getPosts();
+  // Use base36 timestamp + small random suffix to avoid id collision on rapid consecutive posts
+  var newId=Date.now();
+  while(posts.some(function(p){return p.id===newId})){newId++}
   var post={
-    id:Date.now(),
+    id:newId,
     user:currentUser?currentUser.user:'芙光用户',
     userName:currentUser?currentUser.name:'芙光用户',
     userColor:currentUser?currentUser.color:'#FF6B9D',
@@ -2492,7 +2527,7 @@ function previewPhoto(input){
                   if(paText2)paText2.textContent='点击从相册选择照片'
                 }else{
                   var paText2b=document.querySelector('.photo-area .pa-text');
-                  if(paText2b)paText2b.textContent='已选择 '+pendingPhotos.length+' 张照片（点击继续添加）'
+                  if(paText2b)paText2b.textContent='已选择 '+pendingPhotos.length+' 张照片'+(pendingPhotos.length>=9?'（已达上限）':'（点击继续添加）')
                 }
               }
             })(dataUrl,wrapper);
@@ -2502,7 +2537,7 @@ function previewPhoto(input){
           var pa=document.querySelector('.photo-area');
           if(pa){pa.style.height='auto';pa.style.minHeight='auto';pa.style.padding='10px';var paIcon=pa.querySelector('.pa-icon');if(paIcon)paIcon.style.display='none'}
           var paText=document.querySelector('.photo-area .pa-text');
-          if(paText)paText.textContent='已选择 '+pendingPhotos.length+' 张照片（点击继续添加）'
+          if(paText)paText.textContent='已选择 '+pendingPhotos.length+' 张照片'+(pendingPhotos.length>=9?'（已达上限）':'（点击继续添加）')
         }
       };
       reader.onerror=function(){
@@ -2520,13 +2555,13 @@ function previewPhoto(input){
               var im2=document.createElement('img');im2.src=dUrl;im2.style.cssText='width:100%;height:100%;object-fit:cover';
               var dl2=document.createElement('span');dl2.textContent='✕';dl2.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.55);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;line-height:1';
               (function(dU,wR){
-                dl2.onclick=function(ev){ev.stopPropagation();var idx2=pendingPhotos.indexOf(dU);if(idx2>=0)pendingPhotos.splice(idx2,1);wR.remove();if(pendingPhotos.length===0){document.getElementById('photoPreview').style.display='none';var pa4=document.querySelector('.photo-area');if(pa4){pa4.style.height='';pa4.style.minHeight='';pa4.style.padding='';var pi4=pa4.querySelector('.pa-icon');if(pi4)pi4.style.display=''}var pt4=document.querySelector('.photo-area .pa-text');if(pt4)pt4.textContent='点击从相册选择照片'}else{var pt4b=document.querySelector('.photo-area .pa-text');if(pt4b)pt4b.textContent='已选择 '+pendingPhotos.length+' 张照片（点击继续添加）'}}
+                dl2.onclick=function(ev){ev.stopPropagation();var idx2=pendingPhotos.indexOf(dU);if(idx2>=0)pendingPhotos.splice(idx2,1);wR.remove();if(pendingPhotos.length===0){document.getElementById('photoPreview').style.display='none';var pa4=document.querySelector('.photo-area');if(pa4){pa4.style.height='';pa4.style.minHeight='';pa4.style.padding='';var pi4=pa4.querySelector('.pa-icon');if(pi4)pi4.style.display=''}var pt4=document.querySelector('.photo-area .pa-text');if(pt4)pt4.textContent='点击从相册选择照片'}else{var pt4b=document.querySelector('.photo-area .pa-text');if(pt4b)pt4b.textContent='已选择 '+pendingPhotos.length+' 张照片'+(pendingPhotos.length>=9?'（已达上限）':'（点击继续添加）')}}
               })(dUrl,wr2);
               wr2.appendChild(im2);wr2.appendChild(dl2);grid.appendChild(wr2)
             }
             document.getElementById('photoPreview').style.display='block';
             var pa5=document.querySelector('.photo-area');if(pa5){pa5.style.height='auto';pa5.style.minHeight='auto';pa5.style.padding='10px';var pi5=pa5.querySelector('.pa-icon');if(pi5)pi5.style.display='none'}
-            var pt5=document.querySelector('.photo-area .pa-text');if(pt5)pt5.textContent='已选择 '+pendingPhotos.length+' 张照片（点击继续添加）'
+            var pt5=document.querySelector('.photo-area .pa-text');if(pt5)pt5.textContent='已选择 '+pendingPhotos.length+' 张照片'+(pendingPhotos.length>=9?'（已达上限）':'（点击继续添加）')
           }
         }
       };
@@ -2572,7 +2607,8 @@ function showUserProfile(username){
   if(!username){showToast('⚠️ 用户名为空');return}
   var acc=testAccounts.find(function(a){return a.user===username});
   if(!acc){showToast('⚠️ 未找到用户: '+username);return}
-  updateProfileDisplay(acc);
+  // Save viewing user so switchPage override picks it up
+  saveProfileViewingUser(acc);
   // Set back button to return to actual previous page
   var prevPage=document.querySelector('.page.active');
   var prevId=prevPage?prevPage.id:'pageHome';
@@ -2583,7 +2619,7 @@ function showUserProfile(username){
     backBtn.setAttribute('data-back',backId);
     backBtn.onclick=function(){switchPage(backBtn.getAttribute('data-back')||'pageHome')}
   }
-  // Use switchPage for proper state management
+  // Use switchPage for proper state management (override will call updateProfileDisplay)
   switchPage('pageProfile',false)
 }
 function updateProfileDisplay(acc){
@@ -2642,7 +2678,7 @@ function updateProfileDisplay(acc){
   if(!isOwn)saveProfileViewingUser(acc);else saveProfileViewingUser(null);
   // Refresh stats + posts
   updateProfileStats();
-  showProfilePosts()
+  showProfilePosts(true)
 }
 function pickProfileBg(){
   if(!currentUser)return;
