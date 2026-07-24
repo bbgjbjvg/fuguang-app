@@ -833,7 +833,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
     <div class="tab-item tab-active" data-page="pageHome" onclick="switchPage('pageHome')"><span class="tab-icon">◉</span><span class="tab-label">首页</span></div>
     <div class="tab-item" data-page="pageExplore" onclick="switchPage('pageExplore')"><span class="tab-icon">◎</span><span class="tab-label">探索</span></div>
     <div class="tab-item" data-page="pagePost" onclick="switchPage('pagePost')"><span class="tab-icon">✧</span><span class="tab-label">发布</span></div>
-    <div class="tab-item" data-page="pageProfile" onclick="saveProfileViewingUser(null);switchPage('pageProfile')"><span class="tab-icon">○</span><span class="tab-label">我的</span></div>
+    <div class="tab-item" data-page="pageProfile" onclick="saveProfileViewingUser(null);var sc=document.querySelector('#pageProfile .page-scroll');if(sc)sc.scrollTop=0;switchPage('pageProfile')"><span class="tab-icon">○</span><span class="tab-label">我的</span></div>
   </div>
 </div>
 
@@ -900,7 +900,7 @@ function seedPostsIfEmpty(){
 // ====== Posts Storage ======
 function getPosts(){try{return JSON.parse(localStorage.getItem('fuguang_posts')||'[]')}catch(e){return[]}}
 function savePosts(p){
-  try{localStorage.setItem('fuguang_posts',JSON.stringify(p))}catch(e){showToast('⚠️ 存储空间不足，请清理数据')}
+  try{localStorage.setItem('fuguang_posts',JSON.stringify(p));return true}catch(e){showToast('⚠️ 存储空间不足，请清理数据');return false}
   // Auto-backup to Android bridge
   if(window.FuguangBridge){
     try{
@@ -1293,11 +1293,7 @@ function updateProfileStats(){
   if(sl)sl.textContent=totalLikes>999?Math.round(totalLikes/1000*10)/10+'k':totalLikes.toString();
   // Following count: for current user show actual following, for others show hardcoded stats
   var isOwnProfile=currentUser&&viewingUser.user===currentUser.user;
-  if(sf)sf.textContent=(isOwnProfile?getFollowingCount():(viewingUser.stats&&viewingUser.stats.following?viewingUser.stats.following:0)).toLocaleString();
-  // Old fallback
-  var nums=document.querySelectorAll('#pageProfile .profile-stat .num');
-  if(nums[0]&&!sp)nums[0].textContent=viewingPosts.toLocaleString();
-  if(nums[2]&&!sl)nums[2].textContent=totalLikes>999?Math.round(totalLikes/1000*10)/10+'k':totalLikes.toString()
+  if(sf)sf.textContent=(isOwnProfile?getFollowingCount():(viewingUser.stats&&viewingUser.stats.following?viewingUser.stats.following:0)).toLocaleString()
 }
 function showProfilePosts(){
   var viewingUser=getProfileViewingUser()||currentUser;
@@ -1331,17 +1327,27 @@ function showProfileFollowing(){
   var viewingUser=getProfileViewingUser()||currentUser;
   if(!viewingUser)return;
   var isOwn=currentUser&&viewingUser.user===currentUser.user;
-  showToast('👥 '+(isOwn?'你':'TA')+'关注了 '+getFollowingCount()+' 人');
+  // For current user show actual following count, for others show stats.following
+  var followingCount=isOwn?getFollowingCount():(viewingUser.stats&&viewingUser.stats.following?viewingUser.stats.following:0);
+  showToast('👥 '+(isOwn?'你':'TA')+'关注了 '+followingCount+' 人');
   var list=document.getElementById('profilePostList');
   if(!list)return;
-  var following=getFollowing();
-  if(following.length===0){list.innerHTML='<div class="feed-card-empty">'+(isOwn?'还没有关注任何人，去探索页发现更多有趣的人吧 ✨':'TA还没有关注任何人 ✨')+'</div>';return}
-  var posts=getPosts().filter(function(p){return following.indexOf(p.user)!==-1});
+  // For current user, show posts from followed users; for others, show all their posts (since we don't track who they follow)
   list.innerHTML='';
-  if(posts.length===0){list.innerHTML='<div class="feed-card-empty">'+(isOwn?'你':'TA')+'关注的用户还没有发布内容 ✨</div>';return}
-  posts.forEach(function(p){list.appendChild(createFeedCard(p))});
+  if(isOwn){
+    var following=getFollowing();
+    if(following.length===0){list.innerHTML='<div class="feed-card-empty">还没有关注任何人，去探索页发现更多有趣的人吧 ✨</div>';return}
+    var posts=getPosts().filter(function(p){return following.indexOf(p.user)!==-1});
+    if(posts.length===0){list.innerHTML='<div class="feed-card-empty">你关注的用户还没有发布内容 ✨</div>';return}
+    posts.forEach(function(p){list.appendChild(createFeedCard(p))});
+  }else{
+    // For other users, show their own posts as a substitute (since we don't track their following)
+    var theirPosts=getPosts().filter(function(p){return p.user===viewingUser.user});
+    if(theirPosts.length===0){list.innerHTML='<div class="feed-card-empty">TA还没有发布内容 ✨</div>';return}
+    theirPosts.forEach(function(p){list.appendChild(createFeedCard(p))});
+  }
   var title=document.getElementById('profilePostsTitle');
-  if(title)title.textContent='关注动态'
+  if(title)title.textContent=isOwn?'关注动态':'TA的发布'
 }
 
 // ====== Page Switching ======
@@ -1423,7 +1429,12 @@ function postContent(){
     comments:0
   };
   posts.unshift(post);
-  savePosts(posts);
+  if(!savePosts(posts)){
+    // Rollback in-memory post if save failed
+    posts.shift();
+    showToast('⚠️ 发布失败，存储空间不足');
+    return
+  }
   updateProfileStats();
   updateHeroStats();
   renderAllFeeds();
@@ -1609,6 +1620,12 @@ function createFeedCard(p){
     attachReplyEvents(ce,pid);
     cd.style.display='block';
     document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+pp.comments});
+    // Sync detail page if open
+    var detailEl=document.getElementById('pagePostDetail');
+    if(detailEl&&detailEl.classList.contains('active')&&detailEl.getAttribute('data-post-id')==String(pid)){
+      var cEl=document.querySelector('.detail-action:nth-child(2)');
+      if(cEl)cEl.textContent='💬 '+pp.comments
+    }
     updateProfileStats()
   };
   // Reply toggle
@@ -1642,6 +1659,12 @@ function createFeedCard(p){
         rl.appendChild(re)
       }
       document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+pp.comments});
+      // Sync detail page if open
+      var detailEl=document.getElementById('pagePostDetail');
+      if(detailEl&&detailEl.classList.contains('active')&&detailEl.getAttribute('data-post-id')==String(pid)){
+        var cEl=document.querySelector('.detail-action:nth-child(2)');
+        if(cEl)cEl.textContent='💬 '+pp.comments
+      }
       updateProfileStats()
     }
   });
@@ -1671,7 +1694,7 @@ function createFeedCard(p){
     saveFollowing(list);
     // Update all follow buttons for this user without full re-render (preserves comment input)
     var isNowFollowing=idx===-1;
-    var cssEscaped=username.replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+    var cssEscaped=username.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\]/g,'\\]').replace(/\[/g,'\\[');
     document.querySelectorAll('.feed-follow-btn[data-user="'+cssEscaped+'"]').forEach(function(btn){
       if(isNowFollowing){btn.textContent='✓ 已关注';btn.classList.add('following');btn.style.background='#E8ECF0';btn.style.color='#8C9AAE'}
       else{btn.textContent='＋ 关注';btn.classList.remove('following');btn.style.background='#FF6B9D';btn.style.color='#FFF'}
@@ -1729,6 +1752,12 @@ function attachReplyEvents(container,pid){
         rl.appendChild(re)
       }
       document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+pp.comments});
+      // Sync detail page if open
+      var detailEl=document.getElementById('pagePostDetail');
+      if(detailEl&&detailEl.classList.contains('active')&&detailEl.getAttribute('data-post-id')==String(pid)){
+        var cEl=document.querySelector('.detail-action:nth-child(2)');
+        if(cEl)cEl.textContent='💬 '+pp.comments
+      }
       updateProfileStats()
     }
   });
@@ -1911,12 +1940,76 @@ function showPostDetail(pid){
     var ps=getPosts(),pp2=ps.find(function(x){return x.id===pid});
     if(!pp2)return;
     if(!pp2.commentList)pp2.commentList=[];
-    pp2.commentList.push({name:currentUser.name,id:currentUser.id,text:text,time:new Date().toISOString(),replies:[]});
+    var nc={name:currentUser.name,id:currentUser.id,text:text,time:new Date().toISOString(),replies:[]};
+    pp2.commentList.push(nc);
     pp2.comments=pp2.commentList.length;savePosts(ps);
     inp.value='';
-    showPostDetail(pid);
-    renderAllFeeds();
-    renderProfilePosts();
+    // Update detail page UI without full re-render to preserve focus
+    var commentsSection=document.querySelector('.detail-comments-section');
+    if(commentsSection){
+      // Remove "no comments" placeholder if exists
+      var placeholder=commentsSection.querySelector('div[style*="text-align:center"]');
+      if(placeholder&&placeholder.textContent.indexOf('还没有评论')!==-1)placeholder.remove();
+      var newIdx=pp2.commentList.length-1;
+      var ce=document.createElement('div');
+      ce.className='detail-comment';
+      ce.innerHTML='<div class="feed-comment-avatar" style="width:24px;height:24px;min-width:24px"></div>'+
+        '<div class="feed-comment-body">'+
+        '<div class="feed-comment-name">'+escapeHtml(currentUser.name)+'</div>'+
+        '<div class="feed-comment-text">'+escapeHtml(text)+'</div>'+
+        '<div class="detail-comment-time">刚刚 <span style="color:#4FC3F7;cursor:pointer" class="detail-reply-btn" data-ci="'+newIdx+'">回复</span></div>'+
+        '<div class="reply-area" style="display:none;margin-top:6px" id="detailReplyArea'+newIdx+'">'+
+        '<div style="display:flex;gap:6px">'+
+        '<input type="text" class="reply-input" placeholder="回复 '+escapeHtml(currentUser.name)+'……" maxlength="200" style="flex:1;border:1px solid #E0E6EC;border-radius:14px;padding:4px 10px;font-size:clamp(10px,1.8vw,12px);outline:none;background:#F0F5FA;color:#2C3A4A">'+
+        '<button class="detail-reply-send-btn" data-post-id="'+pid+'" data-ci="'+newIdx+'" style="border:none;background:#4FC3F7;color:#FFF;border-radius:14px;padding:4px 12px;font-size:clamp(10px,1.8vw,12px);cursor:pointer;flex-shrink:0">回复</button></div></div>'+
+        '<div class="replies-list" id="detailReplies'+newIdx+'"></div></div>';
+      // Insert before the input area
+      var inputArea=commentsSection.querySelector('.detail-comment-input');
+      if(inputArea)commentsSection.insertBefore(ce,inputArea);
+      else commentsSection.appendChild(ce);
+      // Bind reply events for the new comment
+      var newReplyBtn=ce.querySelector('.detail-reply-btn');
+      if(newReplyBtn){
+        newReplyBtn.onclick=function(){
+          var ci=Number(this.getAttribute('data-ci'));
+          var area=document.getElementById('detailReplyArea'+ci);
+          if(!area)return;
+          area.style.display=area.style.display==='none'||!area.style.display?'flex':'none';
+          if(area.style.display==='flex'){var ri=area.querySelector('.reply-input');if(ri)ri.focus()}
+        }
+      }
+      var newReplySend=ce.querySelector('.detail-reply-send-btn');
+      if(newReplySend)newReplySend.onclick=function(){
+        if(!currentUser){showToast('⚠️ 请先登录');return}
+        var rci=Number(this.getAttribute('data-ci'));
+        var rarea=document.getElementById('detailReplyArea'+rci);
+        if(!rarea||rarea.style.display!=='flex')return;
+        var rri=rarea.querySelector('.reply-input');if(!rri||!rri.value.trim())return;
+        var rtxt=rri.value.trim();
+        var rps=getPosts(),rpp=rps.find(function(x){return x.id===pid});
+        if(!rpp||!rpp.commentList||!rpp.commentList[rci])return;
+        if(!rpp.commentList[rci].replies)rpp.commentList[rci].replies=[];
+        rpp.commentList[rci].replies.push({name:currentUser.name,id:currentUser.id,text:rtxt,time:new Date().toISOString()});
+        rpp.comments=rpp.commentList.length;savePosts(rps);
+        // Append new reply to replies-list without full re-render
+        var rl=document.getElementById('detailReplies'+rci);
+        if(rl){
+          var nre=document.createElement('div');nre.style.cssText='margin-left:24px;margin-top:6px;display:flex;gap:6px;align-items:flex-start';
+          nre.innerHTML='<div class="feed-comment-avatar" style="width:18px;height:18px;min-width:18px"></div>'+
+            '<div class="feed-comment-body">'+
+            '<div class="feed-comment-name" style="font-size:11px">'+escapeHtml(currentUser.name)+'</div>'+
+            '<div class="feed-comment-text" style="font-size:11px">'+escapeHtml(rtxt)+'</div>'+
+            '<div class="feed-comment-time" style="font-size:9px">刚刚</div></div>';
+          rl.appendChild(nre)
+        }
+        rri.value='';rarea.style.display='none'
+      }
+    }
+    // Update comment count in detail page
+    var countEl=document.querySelector('.detail-action:nth-child(2)');
+    if(countEl)countEl.textContent='💬 '+pp2.comments;
+    // Update feed cards' comment count
+    document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+pp2.comments});
     updateProfileStats()
   };
   detailEl.querySelectorAll('.detail-reply-btn').forEach(function(el){
@@ -1943,9 +2036,19 @@ function showPostDetail(pid){
       pp2.comments=pp2.commentList.length;savePosts(ps);
       ri.value='';
       area.style.display='none';
-      showPostDetail(pid);
-      renderAllFeeds();
-      renderProfilePosts();
+      // Append new reply to replies-list without full re-render
+      var rl=document.getElementById('detailReplies'+ci);
+      if(rl){
+        var nre=document.createElement('div');nre.style.cssText='margin-left:24px;margin-top:6px;display:flex;gap:6px;align-items:flex-start';
+        nre.innerHTML='<div class="feed-comment-avatar" style="width:18px;height:18px;min-width:18px"></div>'+
+          '<div class="feed-comment-body">'+
+          '<div class="feed-comment-name" style="font-size:11px">'+escapeHtml(currentUser.name)+'</div>'+
+          '<div class="feed-comment-text" style="font-size:11px">'+escapeHtml(text)+'</div>'+
+          '<div class="feed-comment-time" style="font-size:9px">刚刚</div></div>';
+        rl.appendChild(nre)
+      }
+      // Update comment count in feed cards
+      document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+pp2.comments});
       updateProfileStats()
     }
   });
@@ -1975,7 +2078,7 @@ function toggleFollow(username,btn){
   }
   var isNowFollowing=idx===-1;
   // Update all feed card follow buttons for this user
-  var cssEscaped2=username.replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+  var cssEscaped2=username.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\]/g,'\\]').replace(/\[/g,'\\[');
   document.querySelectorAll('.feed-follow-btn[data-user="'+cssEscaped2+'"]').forEach(function(b){
     if(isNowFollowing){b.textContent='✓ 已关注';b.classList.add('following');b.style.background='#E8ECF0';b.style.color='#8C9AAE'}
     else{b.textContent='＋ 关注';b.classList.remove('following');b.style.background='#FF6B9D';b.style.color='#FFF'}
@@ -2086,7 +2189,7 @@ function getTimeAgo(iso){
   if(diff<2592000)return Math.floor(diff/86400)+'天前';
   return new Date(iso).toLocaleDateString('zh-CN')
 }
-function escapeHtml(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function escapeHtml(t){if(t===null||t===undefined)return'';var d=document.createElement('div');d.textContent=t;return d.innerHTML}
 function showToast(msg){
   var el=document.getElementById('toast');
   if(!el)return;
@@ -2120,6 +2223,15 @@ function updateCount(t){
 function filterCat(el,cat){
   document.querySelectorAll('.cat-tab').forEach(function(t){t.classList.remove('active')});
   el.classList.add('active');
+  // Reset search state when switching categories
+  var si=document.getElementById('searchInput');
+  if(si)si.value='';
+  var r=document.getElementById('searchResults');
+  if(r)r.style.display='none';
+  var st=document.getElementById('sectionTitle');
+  if(st)st.style.display='block';
+  var ef=document.getElementById('exploreFeed');
+  if(ef&&ef.parentNode)ef.parentNode.style.display='';
   var feed=document.getElementById('exploreFeed');
   if(!feed)return;
   var tagGrid=document.getElementById('exploreGrid');
