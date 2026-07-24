@@ -883,6 +883,10 @@ function seedPostsIfEmpty(){
 
   var seedPosts=[];
   seedAccounts.forEach(function(s,i){
+    var commentList=[
+      {name:'光影旅人',id:'fuguang_lvren',text:'太棒了！',time:new Date(s.time+3600000).toISOString(),replies:[]},
+      {name:'日落收集家',id:'fuguang_riluo',text:'同感 🙌',time:new Date(s.time+7200000).toISOString(),replies:[]}
+    ];
     seedPosts.push({
       id:Date.now()-3600000*72+i*3600000,
       user:s.user,
@@ -890,13 +894,11 @@ function seedPostsIfEmpty(){
       userColor:s.color,
       text:s.text,
       photo:s.photo||'',
+      photos:[],
       time:new Date(s.time).toISOString(),
       likes:Math.floor(Math.random()*50)+5,
-      commentList:[
-        {name:'光影旅人',id:'fuguang_lvren',text:'太棒了！',time:new Date(s.time+3600000).toISOString(),replies:[]},
-        {name:'日落收集家',id:'fuguang_riluo',text:'同感 🙌',time:new Date(s.time+7200000).toISOString(),replies:[]}
-      ],
-      comments:2
+      commentList:commentList,
+      comments:commentList.length
     })
   });
   savePosts(seedPosts)
@@ -1185,8 +1187,26 @@ function importData(input){
     try{
       var data=JSON.parse(e.target.result);
       if(data.posts&&Array.isArray(data.posts)){
-        // Sync commentList.length to comments field for data consistency
-        data.posts.forEach(function(p){if(p.commentList){p.comments=p.commentList.length}});
+        // Sync comment count (top-level + all replies) for data consistency
+        data.posts.forEach(function(p){
+          if(p.commentList){
+            var n=p.commentList.length;
+            for(var i=0;i<p.commentList.length;i++){
+              if(p.commentList[i]&&p.commentList[i].replies)n+=p.commentList[i].replies.length
+            }
+            p.comments=n
+          }else{
+            p.commentList=[];
+            p.comments=0
+          }
+        });
+        // Sanitize: ensure photos arrays exist (legacy photo -> photos migration)
+        data.posts.forEach(function(p){
+          if(!p.photos){
+            if(p.photo)p.photos=[p.photo];
+            else p.photos=[]
+          }
+        });
         savePosts(data.posts)
       }
       if(data.following&&Array.isArray(data.following)){try{localStorage.setItem('fuguang_following',JSON.stringify(data.following))}catch(ex){}}
@@ -1431,12 +1451,12 @@ function postContent(){
   var text=(ta&&ta.value.trim())||'';
   var photosData=[];
   if(isPhoto){
-    if(pendingPhotos.length===0){alert('⚠️ 请先选择照片');return}
+    if(pendingPhotos.length===0){showToast('⚠️ 请先选择照片');return}
     photosData=pendingPhotos.slice();
     var cap=document.getElementById('photoCaption');
     if(cap&&cap.value.trim())text=cap.value.trim();
   }else{
-    if(!text){alert('⚠️ 请输入文字');return}
+    if(!text){showToast('⚠️ 请输入文字');return}
   }
 
   var posts=getPosts();
@@ -1564,7 +1584,7 @@ function createFeedCard(p){
   if(p.text){
     html+='<div class="feed-card-text">'+escapeHtml(p.text)+'</div>'
   }
-  var actualComments=(p.commentList||[]).length;
+  var actualComments=countAllComments(p);
   html+='<div class="feed-card-actions">'+
     '<span class="action-like" data-id="'+p.id+'">❤ '+(p.likes||0)+'</span>'+
     '<span class="action-comment" data-id="'+p.id+'">💬 '+actualComments+'</span>'+
@@ -1638,7 +1658,7 @@ function createFeedCard(p){
     if(!pp.commentList)pp.commentList=[];
     var nc={name:currentUser.name,id:currentUser.id,text:text,time:new Date().toISOString(),replies:[]};
     pp.commentList.push(nc);
-    pp.comments=pp.commentList.length;savePosts(posts);
+    pp.comments=countAllComments(pp);savePosts(posts);
     inp.value='';
     var ci=pp.commentList.length-1;
     var ce=document.createElement('div');ce.className='feed-comment';
@@ -1678,7 +1698,7 @@ function createFeedCard(p){
       var posts=getPosts(),pp=posts.find(function(x){return x.id===pid});if(!pp||!pp.commentList||!pp.commentList[ci])return;
       if(!pp.commentList[ci].replies)pp.commentList[ci].replies=[];
       pp.commentList[ci].replies.push({name:currentUser.name,id:currentUser.id,text:text,time:new Date().toISOString()});
-      pp.comments=pp.commentList.length;savePosts(posts);
+      pp.comments=countAllComments(pp);savePosts(posts);
       ri.value='';area.style.display='none';
       var rl=area.nextElementSibling;
       if(rl){
@@ -1771,7 +1791,7 @@ function attachReplyEvents(container,pid){
       var posts=getPosts(),pp=posts.find(function(x){return x.id===pid});if(!pp||!pp.commentList||!pp.commentList[ci])return;
       if(!pp.commentList[ci].replies)pp.commentList[ci].replies=[];
       pp.commentList[ci].replies.push({name:currentUser.name,id:currentUser.id,text:text,time:new Date().toISOString()});
-      pp.comments=pp.commentList.length;savePosts(posts);
+      pp.comments=countAllComments(pp);savePosts(posts);
       ri.value='';area.style.display='none';
       var rl=area.nextElementSibling;
       if(rl){
@@ -1823,6 +1843,12 @@ function handlePostAction(pid,action){
     renderAllFeeds();
     renderProfilePosts();
     updateProfileStats();
+    updateHeroStats();
+    // If currently viewing this post's detail, go back
+    var detailEl=document.getElementById('pagePostDetail');
+    if(detailEl&&detailEl.classList.contains('active')&&detailEl.getAttribute('data-post-id')==String(pid)){
+      switchPage(detailEl.getAttribute('data-back')||'pageHome')
+    }
     showToast('✅ 帖子已删除')
   }else if(action==='edit'){
     showEditPost(pid)
@@ -1853,6 +1879,11 @@ function saveEditPost(pid){
   closeModal();
   renderAllFeeds();
   renderProfilePosts();
+  // If detail page is showing this post, refresh it
+  var detailEl=document.getElementById('pagePostDetail');
+  if(detailEl&&detailEl.classList.contains('active')&&detailEl.getAttribute('data-post-id')==String(pid)){
+    showPostDetail(pid)
+  }
   showToast('✅ 帖子已更新')
 }
 function showPostDetail(pid){
@@ -1864,7 +1895,7 @@ function showPostDetail(pid){
   var timeAgo=getTimeAgo(pp.time);
   var editInfo='';
   if(pp.editedAt)editInfo='<span style="color:#8C9AAE;font-size:12px"> · 编辑于'+getTimeAgo(pp.editedAt)+'</span>';
-  var actualComments=(pp.commentList||[]).length;
+  var actualComments=countAllComments(pp);
   var isFollower=currentUser&&isFollowing(pp.user);
   var canFollow=currentUser&&pp.user!==currentUser.user;
   // Preserve back reference when re-rendering same post (e.g. after adding comment)
@@ -1974,7 +2005,7 @@ function showPostDetail(pid){
     if(!pp2.commentList)pp2.commentList=[];
     var nc={name:currentUser.name,id:currentUser.id,text:text,time:new Date().toISOString(),replies:[]};
     pp2.commentList.push(nc);
-    pp2.comments=pp2.commentList.length;savePosts(ps);
+    pp2.comments=countAllComments(pp2);savePosts(ps);
     inp.value='';
     // Update detail page UI without full re-render to preserve focus
     var commentsSection=document.querySelector('.detail-comments-section');
@@ -2022,7 +2053,7 @@ function showPostDetail(pid){
         if(!rpp||!rpp.commentList||!rpp.commentList[rci])return;
         if(!rpp.commentList[rci].replies)rpp.commentList[rci].replies=[];
         rpp.commentList[rci].replies.push({name:currentUser.name,id:currentUser.id,text:rtxt,time:new Date().toISOString()});
-        rpp.comments=rpp.commentList.length;savePosts(rps);
+        rpp.comments=countAllComments(rpp);savePosts(rps);
         // Append new reply to replies-list without full re-render
         var rl=document.getElementById('detailReplies'+rci);
         if(rl){
@@ -2034,7 +2065,12 @@ function showPostDetail(pid){
             '<div class="feed-comment-time" style="font-size:9px">刚刚</div></div>';
           rl.appendChild(nre)
         }
-        rri.value='';rarea.style.display='none'
+        rri.value='';rarea.style.display='none';
+        document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+rpp.comments});
+        var cEl=document.querySelector('.detail-action:nth-child(2)');
+        if(cEl)cEl.textContent='💬 '+rpp.comments;
+        updateProfileStats();
+        updateHeroStats()
       }
     }
     // Update comment count in detail page
@@ -2066,7 +2102,7 @@ function showPostDetail(pid){
       if(!pp2||!pp2.commentList||!pp2.commentList[ci])return;
       if(!pp2.commentList[ci].replies)pp2.commentList[ci].replies=[];
       pp2.commentList[ci].replies.push({name:currentUser.name,id:currentUser.id,text:text,time:new Date().toISOString()});
-      pp2.comments=pp2.commentList.length;savePosts(ps);
+      pp2.comments=countAllComments(pp2);savePosts(ps);
       ri.value='';
       area.style.display='none';
       // Append new reply to replies-list without full re-render
@@ -2226,6 +2262,15 @@ function getTimeAgo(iso){
   return new Date(iso).toLocaleDateString('zh-CN')
 }
 function escapeHtml(t){if(t===null||t===undefined)return'';var d=document.createElement('div');d.textContent=t;return d.innerHTML}
+// Count all comments including replies for a post
+function countAllComments(post){
+  if(!post||!post.commentList)return 0;
+  var n=post.commentList.length;
+  for(var i=0;i<post.commentList.length;i++){
+    if(post.commentList[i]&&post.commentList[i].replies)n+=post.commentList[i].replies.length
+  }
+  return n
+}
 function showToast(msg){
   var el=document.getElementById('toast');
   if(!el)return;
@@ -2368,7 +2413,7 @@ function searchContent(q){
         var preview=(p.text||'[图片]').substring(0,40);
         var author=testAccounts.find(function(a){return a.user===p.user});
         var atId=author?' @'+escapeHtml(author.id):'';
-        html+='<div class="notif-item" onclick="showPostDetail('+p.id+')" style="cursor:pointer"><div class="notif-text"><div class="notif-name">'+escapeHtml(p.userName||'匿名')+atId+'</div><div class="notif-msg">'+escapeHtml(preview)+((p.photos&&p.photos.length>0)||p.photo?' 📷':'')+'</div><div style="font-size:10px;color:#B4BCC8;margin-top:2px">'+getTimeAgo(p.time)+' · ❤️ '+(p.likes||0)+' · 💬 '+(p.commentList||[]).length+'</div></div></div>'
+        html+='<div class="notif-item" onclick="showPostDetail('+p.id+')" style="cursor:pointer"><div class="notif-text"><div class="notif-name">'+escapeHtml(p.userName||'匿名')+atId+'</div><div class="notif-msg">'+escapeHtml(preview)+((p.photos&&p.photos.length>0)||p.photo?' 📷':'')+'</div><div style="font-size:10px;color:#B4BCC8;margin-top:2px">'+getTimeAgo(p.time)+' · ❤️ '+(p.likes||0)+' · 💬 '+countAllComments(p)+'</div></div></div>'
       });
     }
 
@@ -2398,7 +2443,7 @@ function previewPhoto(input){
   var files=input.files;
   if(!files||files.length===0)return;
   var newCount=pendingPhotos.length+files.length;
-  if(newCount>9){alert('⚠️ 最多只能选择9张照片，当前已有'+pendingPhotos.length+'张，还能选'+(9-pendingPhotos.length)+'张');return}
+  if(newCount>9){showToast('⚠️ 最多只能选择9张照片，当前已有'+pendingPhotos.length+'张，还能选'+(9-pendingPhotos.length)+'张');return}
   var grid=document.getElementById('previewGrid');
   var temp=new Array(files.length);
   var loaded=0;
@@ -2754,10 +2799,15 @@ function updateHeroStats(){
       p.likeHistory.forEach(function(lh){if(new Date(lh.time).getTime()>=todayTs)todayLikes++})
     }
   });
-  // Today's new comments count
+  // Today's new comments count (top-level + all replies)
   var todayComments=0;
   myPosts.forEach(function(p){
-    (p.commentList||[]).forEach(function(c){if(new Date(c.time).getTime()>=todayTs)todayComments++})
+    (p.commentList||[]).forEach(function(c){
+      if(new Date(c.time).getTime()>=todayTs)todayComments++;
+      if(c.replies){
+        c.replies.forEach(function(r){if(new Date(r.time).getTime()>=todayTs)todayComments++})
+      }
+    })
   });
   setHeroNum('heroTodayPosts',todayPosts);
   setHeroNum('heroTodayLikes',todayLikes);
