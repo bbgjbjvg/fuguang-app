@@ -725,12 +725,12 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
         <div class="notif-text"><div class="notif-name">系统通知</div><div class="notif-msg">欢迎来到芙光，开始记录你的第一束光吧！</div></div>
         <div class="notif-time">3h</div>
       </div>
-      <div class="notif-item" data-type="comment" style="display:none" data-notif-post="comment">
+      <div class="notif-item" data-type="comment" style="display:none" data-notif-post="comment" data-notif-author="光影旅人">
         <div class="notif-avatar" style="background:#FF6B9D"></div>
         <div class="notif-text"><div class="notif-name">光影旅人</div><div class="notif-msg">评论了你的芙影「拍得很有感觉！」</div></div>
         <div class="notif-time">30min</div>
       </div>
-      <div class="notif-item" data-type="like" style="display:none" data-notif-post="like">
+      <div class="notif-item" data-type="like" style="display:none" data-notif-post="like" data-notif-author="拾光者">
         <div class="notif-avatar" style="background:#4FC3F7"></div>
         <div class="notif-text"><div class="notif-name">拾光者</div><div class="notif-msg">赞了你的芙文「深夜随笔」</div></div>
         <div class="notif-time">1h</div>
@@ -900,27 +900,31 @@ function seedPostsIfEmpty(){
 // ====== Posts Storage ======
 function getPosts(){try{return JSON.parse(localStorage.getItem('fuguang_posts')||'[]')}catch(e){return[]}}
 function savePosts(p){
-  try{localStorage.setItem('fuguang_posts',JSON.stringify(p));return true}catch(e){showToast('⚠️ 存储空间不足，请清理数据');return false}
-  // Auto-backup to Android bridge
-  if(window.FuguangBridge){
+  var success=false;
+  try{localStorage.setItem('fuguang_posts',JSON.stringify(p));success=true}catch(e){showToast('⚠️ 存储空间不足，请清理数据')}
+  // Auto-backup to Android bridge (only on success)
+  if(success&&window.FuguangBridge){
     try{
       var allData={posts:p,following:getFollowing(),time:new Date().toISOString()};
       window.FuguangBridge.saveBackup(JSON.stringify(allData))
     }catch(e){}
   }
+  return success
 }
 
 // ====== Login ======
 function login(){
   var u=document.getElementById('loginUser').value.trim();
   var p=document.getElementById('loginPass').value.trim();
-  if(!u||!p){document.getElementById('loginError').textContent='请输入用户名和密码';document.getElementById('loginError').style.display='block';return}
+  var errEl=document.getElementById('loginError');
+  if(!u||!p){errEl.textContent='请输入用户名和密码';errEl.style.display='block';return}
   var acc=testAccounts.find(function(a){return a.user===u&&a.pass===p});
   if(!acc){
-    document.getElementById('loginError').style.display='block';
+    errEl.textContent='用户名或密码错误，请重试';
+    errEl.style.display='block';
     return
   }
-  document.getElementById('loginError').style.display='none';
+  errEl.style.display='none';
   currentUser=acc;
   // Save auto-login
   try{localStorage.setItem('fuguang_last_user',JSON.stringify({user:acc.user,pass:acc.pass}))}catch(e){}
@@ -1172,7 +1176,11 @@ function importData(input){
   reader.onload=function(e){
     try{
       var data=JSON.parse(e.target.result);
-      if(data.posts&&Array.isArray(data.posts)){savePosts(data.posts)}
+      if(data.posts&&Array.isArray(data.posts)){
+        // Sync commentList.length to comments field for data consistency
+        data.posts.forEach(function(p){if(p.commentList){p.comments=p.commentList.length}});
+        savePosts(data.posts)
+      }
       if(data.following&&Array.isArray(data.following)){try{localStorage.setItem('fuguang_following',JSON.stringify(data.following))}catch(ex){}}
       if(data.likes&&Array.isArray(data.likes)){try{localStorage.setItem('fuguang_likes_'+(currentUser?currentUser.user:'default'),JSON.stringify(data.likes))}catch(ex){}}
       if(data.moods&&typeof data.moods==='object'){try{localStorage.setItem('fuguang_moods',JSON.stringify(data.moods))}catch(ex){}}
@@ -1182,7 +1190,9 @@ function importData(input){
       if(data.fontsize)try{localStorage.setItem('fuguang_fontsize',data.fontsize)}catch(ex){}
       if(data.avatar&&currentUser)try{localStorage.setItem('fuguang_avatar_'+currentUser.user,data.avatar)}catch(ex){}
       if(data.bg&&currentUser)try{localStorage.setItem('fuguang_bg_'+currentUser.user,data.bg)}catch(ex){}
-      if(data.accounts)try{localStorage.setItem('fuguang_accounts',data.accounts)}catch(ex){}
+      if(data.accounts){
+        try{var accts=JSON.parse(data.accounts);if(accts&&Array.isArray(accts)){testAccounts=accts;try{localStorage.setItem('fuguang_accounts',data.accounts)}catch(ex){}}}catch(ex){}
+      }
       closeModal();renderAllFeeds();renderProfilePosts();updateProfileStats();applyDarkMode();showToast('✅ 数据导入成功')
     }catch(ex){showToast('⚠️ 数据格式错误')}
   };
@@ -1260,6 +1270,8 @@ function showAdminPanel(){
       if(delAll)delAll.onclick=function(){
         if(confirm('确定要删除所有帖子吗？此操作不可撤销！')){
           try{localStorage.removeItem('fuguang_posts')}catch(e){}
+          // Also clean up per-user like arrays (stale post IDs)
+          try{var lk=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('fuguang_likes_')===0)lk.push(k)}lk.forEach(function(k){localStorage.removeItem(k)})}catch(e){}
           closeModal();
           renderAllFeeds();
           renderProfilePosts();
@@ -1352,6 +1364,8 @@ function showProfileFollowing(){
 
 // ====== Page Switching ======
 function switchPage(id,skipTabUpdate){
+  // Close any open modal before switching
+  if(document.getElementById('modalOverlay').classList.contains('show'))closeModal();
   // Clear pending photos when leaving post page
   var curActive=document.querySelector('.page.active');
   var isSamePage=curActive&&curActive.id===id;
@@ -1370,6 +1384,8 @@ function switchPage(id,skipTabUpdate){
   if(curActive&&curActive.id==='pageExplore'&&id!=='pageExplore'){
     var si=document.getElementById('searchInput');
     if(si){si.value='';searchContent('')}
+    // Clear pending debounce timer
+    if(_searchTimer){clearTimeout(_searchTimer);_searchTimer=null}
   }
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var el=document.getElementById(id);
@@ -1994,8 +2010,8 @@ function showPostDetail(pid){
         // Append new reply to replies-list without full re-render
         var rl=document.getElementById('detailReplies'+rci);
         if(rl){
-          var nre=document.createElement('div');nre.style.cssText='margin-left:24px;margin-top:6px;display:flex;gap:6px;align-items:flex-start';
-          nre.innerHTML='<div class="feed-comment-avatar" style="width:18px;height:18px;min-width:18px"></div>'+
+          var nre=document.createElement('div');nre.className='feed-comment';nre.style.cssText='margin-left:24px';
+        nre.innerHTML='<div class="feed-comment-avatar" style="width:18px;height:18px;min-width:18px"></div>'+
             '<div class="feed-comment-body">'+
             '<div class="feed-comment-name" style="font-size:11px">'+escapeHtml(currentUser.name)+'</div>'+
             '<div class="feed-comment-text" style="font-size:11px">'+escapeHtml(rtxt)+'</div>'+
@@ -2039,7 +2055,7 @@ function showPostDetail(pid){
       // Append new reply to replies-list without full re-render
       var rl=document.getElementById('detailReplies'+ci);
       if(rl){
-        var nre=document.createElement('div');nre.style.cssText='margin-left:24px;margin-top:6px;display:flex;gap:6px;align-items:flex-start';
+        var nre=document.createElement('div');nre.className='feed-comment';nre.style.cssText='margin-left:24px';
         nre.innerHTML='<div class="feed-comment-avatar" style="width:18px;height:18px;min-width:18px"></div>'+
           '<div class="feed-comment-body">'+
           '<div class="feed-comment-name" style="font-size:11px">'+escapeHtml(currentUser.name)+'</div>'+
@@ -2215,7 +2231,11 @@ function togglePostMode(el,mode){
   document.getElementById('photoMode').style.display=mode==='photo'?'block':'none';
   document.getElementById('textMode').style.display=mode==='text'?'block':'none';
   document.getElementById('postBtn').textContent=mode==='photo'?'✦ 发流光':'✦ 写拾光';
-  document.getElementById('photoPreview').style.display='none';pendingPhotos=[];document.getElementById('previewGrid').innerHTML='';var pa3=document.querySelector('.photo-area');if(pa3){pa3.style.height='';pa3.style.minHeight='';pa3.style.padding='';var paIcon3=pa3.querySelector('.pa-icon');if(paIcon3)paIcon3.style.display=''}var paText3=document.querySelector('.photo-area .pa-text');if(paText3)paText3.textContent='点击从相册选择照片'
+  document.getElementById('photoPreview').style.display='none';pendingPhotos=[];document.getElementById('previewGrid').innerHTML='';var pa3=document.querySelector('.photo-area');if(pa3){pa3.style.height='';pa3.style.minHeight='';pa3.style.padding='';var paIcon3=pa3.querySelector('.pa-icon');if(paIcon3)paIcon3.style.display=''}var paText3=document.querySelector('.photo-area .pa-text');if(paText3)paText3.textContent='点击从相册选择照片';
+  // Clear text mode residuals when switching modes
+  var ta=document.getElementById('postTextArea');if(ta)ta.value='';
+  var cc=document.getElementById('charCount');if(cc)cc.textContent='0';
+  var cap=document.getElementById('photoCaption');if(cap)cap.value=''
 }
 function updateCount(t){
   document.getElementById('charCount').textContent=t.value.length
@@ -2445,13 +2465,9 @@ function setupAvatarUpload(){
       reader.onload=function(e){
         if(!currentUser)return;
         var data=e.target.result;
-        try{localStorage.setItem('fuguang_avatar_'+currentUser.user,data)}catch(e){}
-        updateUserUI();
-        // Update modal preview
-        var mp=document.getElementById('modalAvatarPreview');
-        if(mp)mp.style.background='url('+data+') center/cover no-repeat';
-        showToast('✅ 头像已更新')
+        try{localStorage.setItem('fuguang_avatar_'+currentUser.user,data);updateUserUI();var mp=document.getElementById('modalAvatarPreview');if(mp)mp.style.background='url('+data+') center/cover no-repeat';showToast('✅ 头像已更新')}catch(err){showToast('⚠️ 头像保存失败，存储空间不足')}
       };
+      reader.onerror=function(){showToast('⚠️ 图片读取失败')};
       reader.readAsDataURL(inp.files[0])
     }
     inp.value=''
@@ -2625,6 +2641,8 @@ function saveCropBg(){
   if(!currentUser||!window._cropData)return;
   var od=window._cropData,img=new Image();
   img.onload=function(){
+    // Abort if user already cancelled (closed modal)
+    if(!window._cropData){return}
     var wrap=document.getElementById('cropWrap');
     var wrapW=wrap?wrap.offsetWidth:375,wrapH=wrap?wrap.offsetHeight:500;
     var nw=img.naturalWidth,nh=img.naturalHeight;
@@ -2812,11 +2830,20 @@ function initApp(){
   bid('sDelete',showDeleteAccount);
   bid('settingsBackBtn',function(){switchPage(window._settingsBackPage||'pageHome')});
   setupAvatarUpload();
-  // Bind dynamic notification post items
+  // Bind dynamic notification post items - find posts by author
   document.querySelectorAll('[data-notif-post]').forEach(function(el){
     el.onclick=function(){
+      var author=this.getAttribute('data-notif-author');
+      var type=this.getAttribute('data-notif-post');
       var posts=getPosts();
-      if(posts.length>0)showPostDetail(posts[0].id)
+      if(posts.length===0)return;
+      // Find a post by the specified author (fallback to first post)
+      var target=null;
+      if(author){
+        target=posts.find(function(p){return p.userName===author||p.user===author})
+      }
+      if(!target)target=posts[0];
+      showPostDetail(target.id)
     }
   });
   // Auto-restore data from Android bridge (survives app uninstall)
@@ -2828,7 +2855,7 @@ function initApp(){
         if(data.posts&&Array.isArray(data.posts)&&data.posts.length>0){
           var localPosts=getPosts();
           if(localPosts.length===0){savePosts(data.posts);renderAllFeeds();renderProfilePosts();updateProfileStats()}
-          if(data.following&&Array.isArray(data.following)){try{localStorage.setItem('fuguang_following',JSON.stringify(data.following))}catch(e){}}
+          if(data.following&&Array.isArray(data.following)&&getFollowing().length===0){try{localStorage.setItem('fuguang_following',JSON.stringify(data.following))}catch(e){}}
         }
       }
     }catch(e){}
