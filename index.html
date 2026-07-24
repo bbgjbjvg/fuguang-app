@@ -150,7 +150,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .tag-grid{display:flex;flex-wrap:wrap;gap:clamp(8px,1.8vw,12px);margin-bottom:clamp(12px,2.5vw,18px)}
 .tag-pill{padding:clamp(8px,1.8vw,12px) clamp(14px,3vw,20px);border-radius:20px;border:none;font-size:clamp(12px,2.2vw,14px);font-weight:600;cursor:pointer;background:linear-gradient(135deg,#FF6B9D,#4FC3F7);color:#FFF;transition:transform .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(232,77,138,.2)}
 .tag-pill:active{transform:scale(.93);box-shadow:0 4px 12px rgba(232,77,138,.4)}
-.tag-pill.tag-selected{box-shadow:0 0 0 3px #FFF,0 0 0 5px #FF6B9D;transform:scale(1.05)}
+.tag-pill.tag-selected{box-shadow:0 0 0 3px var(--tag-selected-inner,#FFF),0 0 0 5px #FF6B9D;transform:scale(1.05)}
+.app.dark-mode .tag-pill.tag-selected{box-shadow:0 0 0 3px #1C1C1E,0 0 0 5px #FF6B9D}
 
 /* ====== Post ====== */
 .post-content{padding:0 clamp(16px,4vw,24px);flex:1;overflow-y:auto}
@@ -425,6 +426,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .app.dark-mode .post-more-btn{color:#A8B0BC!important}
 .app.dark-mode .post-type-btn:not(.active){background:#2C3A4A}
 .app.dark-mode .post-type-toggle{background:#2C3A4A}
+.app.dark-mode .post-type-btn:not(.active){color:#8C9AAE}
 .app.dark-mode .hero{background:linear-gradient(135deg,#B83D6E,#3A90B0)}
 .app.dark-mode .feed-follow-btn.following{background:#3A4A5C!important;color:#8C9AAE!important}
 .app.dark-mode .feed-follow-btn:not(.following){background:#FF6B9D!important;color:#FFF!important}
@@ -1144,6 +1146,13 @@ function showStorageSettings(){
     if(p.photos){p.photos.forEach(function(ph){totalSize+=ph.length*0.75})}
     if(p.text)totalSize+=p.text.length
   });
+  // Also include avatars and backgrounds in storage
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(k&&(k.indexOf('fuguang_avatar_')===0||k.indexOf('fuguang_bg_')===0)){
+      try{totalSize+=(localStorage.getItem(k)||'').length*0.75}catch(e){}
+    }
+  }
   var sizeStr=totalSize>1048576?(totalSize/1048576).toFixed(1)+'MB':(totalSize>1024?(totalSize/1024).toFixed(1)+'KB':totalSize+'B');
   showModal('存储空间',
     '<div class="modal-info-text">发布内容：<strong>'+posts.length+'</strong> 篇</div>'+
@@ -1247,7 +1256,7 @@ function showAdminPanel(){
   if(!currentUser||!currentUser.isAdmin)return;
   var posts=getPosts();
   var totalPosts=posts.length;
-  var totalComments=posts.reduce(function(s,p){return s+(p.commentList?p.commentList.length:0)},0);
+  var totalComments=posts.reduce(function(s,p){return s+countAllComments(p)},0);
   var totalLikes=posts.reduce(function(s,p){return s+(p.likes||0)},0);
   var postList='';
   if(posts.length>0){
@@ -1257,7 +1266,7 @@ function showAdminPanel(){
       var displayText=fullText.length>100?fullText.substring(0,100)+'…':fullText;
       var timeAgo=getTimeAgo(p.time);
       var hasPhoto=(p.photos&&p.photos.length>0)||p.photo?' 📷':'';
-      var comments=p.commentList?p.commentList.length:0;
+      var comments=countAllComments(p);
       postList+='<div class="admin-post-row">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
         '<div><span class="admin-id">#'+p.id+'</span> '+
@@ -1713,7 +1722,8 @@ function createFeedCard(p){
         var cEl=document.querySelector('.detail-action:nth-child(2)');
         if(cEl)cEl.textContent='💬 '+pp.comments
       }
-      updateProfileStats()
+      updateProfileStats();
+      updateHeroStats()
     }
   });
   // Three-dot menu handler
@@ -1806,7 +1816,8 @@ function attachReplyEvents(container,pid){
         var cEl=document.querySelector('.detail-action:nth-child(2)');
         if(cEl)cEl.textContent='💬 '+pp.comments
       }
-      updateProfileStats()
+      updateProfileStats();
+      updateHeroStats()
     }
   });
 }
