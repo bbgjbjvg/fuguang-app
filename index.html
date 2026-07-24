@@ -521,6 +521,11 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
 .splash-progress{height:100%;background:linear-gradient(90deg,#FF6B9D,#FF8FAB,#4FC3F7);border-radius:3px;animation:loadSpring 2.2s cubic-bezier(.34,1.56,.64,1) .6s both}
 @keyframes loadSpring{0%{transform:scaleX(0)}80%{transform:scaleX(1.05)}100%{transform:scaleX(1)}}
 .splash-version{position:fixed;bottom:clamp(28px,6vh,48px);font-size:11px;color:rgba(160,170,190,.45);animation:fadeUp .7s ease .8s both}
+
+/* Splash dark mode adjustments: bump text contrast on dark backgrounds */
+body.bg-dark #splash .splash-slogan{color:rgba(200,210,230,.7)}
+body.bg-dark #splash .splash-bar{background:rgba(120,130,150,.3)}
+body.bg-dark #splash .splash-version{color:rgba(180,190,210,.5)}
 </style>
 <script src="https://beacon.cdn.qq.com/sdk/4.5.9/beacon_web.min.js"></script>
 <script>
@@ -960,6 +965,7 @@ function logout(){
   // Reset dark mode and font size
   var appEl=document.querySelector('.app');
   if(appEl){appEl.classList.remove('dark-mode');appEl.style.zoom='';appEl.style.transformOrigin=''}
+  document.body.classList.remove('bg-dark');
   document.body.style.backgroundColor='#F0F5FA'
 }
 function updateUserUI(){
@@ -1085,8 +1091,8 @@ function applyDarkMode(){
   var isDark=localStorage.getItem('fuguang_dark')==='1';
   var app=document.querySelector('.app');
   if(app){
-    if(isDark){app.classList.add('dark-mode');document.body.style.backgroundColor='#1C1C1E'}
-    else{app.classList.remove('dark-mode');document.body.style.backgroundColor='#F0F5FA'}
+    if(isDark){app.classList.add('dark-mode');document.body.classList.add('bg-dark');document.body.style.backgroundColor='#1C1C1E'}
+    else{app.classList.remove('dark-mode');document.body.classList.remove('bg-dark');document.body.style.backgroundColor='#F0F5FA'}
   }
   // Apply dark mode to splash screen if visible
   var splash=document.getElementById('splash');
@@ -2204,6 +2210,7 @@ function confirmDeleteAccount(){
   // Reset dark mode and font size
   var app=document.querySelector('.app');
   if(app){app.classList.remove('dark-mode');app.style.zoom='';app.style.transformOrigin=''}
+  document.body.classList.remove('bg-dark');
   document.body.style.backgroundColor='#F0F5FA';
   closeModal();
   showToast('✅ 账号已注销，所有数据已清除')
