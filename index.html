@@ -564,8 +564,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
   </div>
   <div class="login-title">芙光</div>
   <div class="login-sub">记录你的每一束光</div>
-  <input class="login-input" id="loginUser" type="text" placeholder="用户名" autocomplete="off">
-  <input class="login-input" id="loginPass" type="password" placeholder="密码" autocomplete="off">
+  <input class="login-input" id="loginUser" type="text" placeholder="用户名" autocomplete="off" onkeydown="if(event.key==='Enter'){document.getElementById('loginPass').focus()}">
+  <input class="login-input" id="loginPass" type="password" placeholder="密码" autocomplete="off" onkeydown="if(event.key==='Enter'){login()}">
   <div class="login-error" id="loginError">用户名或密码错误，请重试</div>
   <button class="login-btn" onclick="login()">进入芙光</button>
 </div>
@@ -692,11 +692,11 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'Noto
         <div id="photoPreview" style="display:none;margin-top:14px">
           <div id="previewGrid" style="display:flex;flex-wrap:wrap;gap:8px"></div>
         </div>
-        <input class="caption-input" type="text" id="photoCaption" placeholder="为你的芙影流光写段描述……" style="margin-top:10px;display:block">
+        <input class="caption-input" type="text" id="photoCaption" placeholder="为你的芙影流光写段描述……" maxlength="200" style="margin-top:10px;display:block">
       </div>
       <div id="textMode" style="display:none">
         <div class="text-compose" style="margin-bottom:24px;min-height:clamp(80px,15vw,120px)">
-          <textarea id="postTextArea" placeholder="写一段芙文拾光……" oninput="updateCount(this)"></textarea>
+          <textarea id="postTextArea" placeholder="写一段芙文拾光……" maxlength="500" oninput="updateCount(this)"></textarea>
           <div class="char-count"><span id="charCount">0</span>/500</div>
         </div>
       </div>
@@ -997,6 +997,8 @@ function updateUserUI(){
   updateHeroGreeting();
   // Update hero stats
   updateHeroStats();
+  // Refresh mood tracking now that currentUser is known
+  initMoodTracking();
   var aboutTitle=document.querySelector('.about-title');
   if(aboutTitle)aboutTitle.textContent='关于 '+currentUser.name;
   updateProfileStats();
@@ -1209,7 +1211,7 @@ function clearAllData(){
   localStorage.removeItem('fuguang_viewing_user');localStorage.removeItem('fuguang_accounts');
   // Clear all per-user avatars and backgrounds
   var allKeys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k)allKeys.push(k)}
-  allKeys.forEach(function(k){if(k.indexOf('fuguang_avatar_')===0||k.indexOf('fuguang_bg_')===0||k.indexOf('fuguang_likes_')===0)localStorage.removeItem(k)})
+  allKeys.forEach(function(k){if(k.indexOf('fuguang_avatar_')===0||k.indexOf('fuguang_bg_')===0||k.indexOf('fuguang_likes_')===0||k.indexOf('fuguang_moods_')===0)localStorage.removeItem(k)})
   }catch(e){}
   closeModal();
   renderAllFeeds();renderProfilePosts();updateProfileStats();
@@ -1595,10 +1597,14 @@ function createFeedCard(p){
     var liked=getLikedPosts();
     if(liked.indexOf(pid)>-1){showToast('❤️ 已赞过');return}
     var posts=getPosts(),pp=posts.find(function(x){return x.id===pid});if(!pp)return;
-    pp.likes=(pp.likes||0)+1;savePosts(posts);
+    pp.likes=(pp.likes||0)+1;
+    if(!pp.likeHistory)pp.likeHistory=[];
+    pp.likeHistory.push({user:currentUser?currentUser.user:'匿名',time:new Date().toISOString()});
+    savePosts(posts);
     liked.push(pid);saveLikedPosts(liked);
     document.querySelectorAll('[data-post-id="'+pid+'"] .action-like').forEach(function(s){s.textContent='❤ '+(pp.likes||0)});
-    updateProfileStats()
+    updateProfileStats();
+    updateHeroStats()
   };
   // Toggle comments
   var commentEl=d.querySelector('.action-comment');
@@ -1930,12 +1936,16 @@ function showPostDetail(pid){
     if(liked.indexOf(pid)>-1){showToast('❤️ 已赞过');return}
     var ps=getPosts(),pp2=ps.find(function(x){return x.id===pid});
     if(!pp2)return;
-    pp2.likes=(pp2.likes||0)+1;savePosts(ps);
+    pp2.likes=(pp2.likes||0)+1;
+    if(!pp2.likeHistory)pp2.likeHistory=[];
+    pp2.likeHistory.push({user:currentUser?currentUser.user:'匿名',time:new Date().toISOString()});
+    savePosts(ps);
     liked.push(pid);saveLikedPosts(liked);
     var lc=document.getElementById('detailLikeCount');
     if(lc)lc.textContent=pp2.likes;
     document.querySelectorAll('[data-post-id="'+pid+'"] .action-like').forEach(function(s){s.textContent='❤ '+(pp2.likes||0)});
-    updateProfileStats()
+    updateProfileStats();
+    updateHeroStats()
   };
   var shareBtn=document.getElementById('detailShareBtn');
   if(shareBtn)shareBtn.onclick=function(){
@@ -2026,7 +2036,8 @@ function showPostDetail(pid){
     if(countEl)countEl.textContent='💬 '+pp2.comments;
     // Update feed cards' comment count
     document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+pp2.comments});
-    updateProfileStats()
+    updateProfileStats();
+    updateHeroStats()
   };
   detailEl.querySelectorAll('.detail-reply-btn').forEach(function(el){
     el.onclick=function(){
@@ -2065,7 +2076,8 @@ function showPostDetail(pid){
       }
       // Update comment count in feed cards
       document.querySelectorAll('[data-post-id="'+pid+'"] .action-comment').forEach(function(s){s.textContent='💬 '+pp2.comments});
-      updateProfileStats()
+      updateProfileStats();
+      updateHeroStats()
     }
   });
   // Switch to detail page
@@ -2162,7 +2174,8 @@ function confirmDeleteAccount(){
   // Clear background
   try{localStorage.removeItem('fuguang_bg_'+username)}catch(e){}
   // Clear moods
-  try{localStorage.removeItem('fuguang_moods')}catch(e){}
+  try{localStorage.removeItem('fuguang_moods_'+username)}catch(e){}
+  try{localStorage.removeItem('fuguang_moods')}catch(e){} // legacy key
   // Clear weather cache
   try{localStorage.removeItem('fuguang_weather')}catch(e){}
   // Clear viewing user
@@ -2252,6 +2265,9 @@ function filterCat(el,cat){
   if(st)st.style.display='block';
   var ef=document.getElementById('exploreFeed');
   if(ef&&ef.parentNode)ef.parentNode.style.display='';
+  // Clear all selected tag pills so they don't carry over
+  var tg=document.getElementById('exploreGrid');
+  if(tg)tg.querySelectorAll('.tag-selected').forEach(function(p){p.classList.remove('tag-selected')});
   var feed=document.getElementById('exploreFeed');
   if(!feed)return;
   var tagGrid=document.getElementById('exploreGrid');
@@ -2475,7 +2491,16 @@ function setupAvatarUpload(){
 }
 // ====== Profile Page Functions ======
 function getProfileViewingUser(){
-  try{return JSON.parse(localStorage.getItem('fuguang_viewing_user')||'null')}catch(e){return null}
+  try{
+    var u=JSON.parse(localStorage.getItem('fuguang_viewing_user')||'null');
+    if(!u||!u.user)return null;
+    // Validate: viewing user must still exist in current test accounts
+    if(!testAccounts.find(function(a){return a.user===u.user})){
+      try{localStorage.removeItem('fuguang_viewing_user')}catch(e){}
+      return null;
+    }
+    return u;
+  }catch(e){return null}
 }
 function saveProfileViewingUser(u){
   try{localStorage.setItem('fuguang_viewing_user',u?JSON.stringify(u):'null')}catch(e){}
@@ -2584,7 +2609,7 @@ function pickProfileBg(){
 }
 function showCropPreview(dataUrl){
   window._cropData={url:dataUrl,scale:1,offsetX:0,offsetY:0};
-  var _cropInitTimer=null;
+  if(window._cropInitTimer){clearTimeout(window._cropInitTimer);window._cropInitTimer=null}
   showModal('📐 自由裁剪背景',
     '<div class="crop-wrap" id="cropWrap">'+
       '<div class="crop-img-wrap" id="cropImgWrap">'+
@@ -2608,8 +2633,7 @@ function showCropPreview(dataUrl){
         ox=0;oy=Math.round((rh-displayH*s)/2);
         apply()
       }
-      _cropInitTimer=setTimeout(init,150);
-      window._cropInitTimer=_cropInitTimer;
+      window._cropInitTimer=setTimeout(init,150);
       wrap.addEventListener('touchstart',function(e){
         img.style.transition='none';
         if(e.touches.length===1){
@@ -2712,11 +2736,22 @@ function updateHeroStats(){
   var posts=getPosts();
   var myPosts=posts.filter(function(p){return p.user===currentUser.user});
   var today=new Date();today.setHours(0,0,0,0);var todayTs=today.getTime();
+  // Today's posts count
   var todayPosts=myPosts.filter(function(p){return new Date(p.time).getTime()>=todayTs}).length;
-  var todayLikes=myPosts.reduce(function(s,p){return s+(p.likes||0)},0);
-  var todayComments=myPosts.filter(function(p){
-    return(p.commentList||[]).some(function(c){return new Date(c.time).getTime()>=todayTs})
-  }).length;
+  // Today's total likes (likes received today across all my posts).
+  // Only count likes with likeHistory tracking. Posts without likeHistory
+  // (legacy data) contribute 0 today to keep "今日" semantics accurate.
+  var todayLikes=0;
+  myPosts.forEach(function(p){
+    if(p.likeHistory){
+      p.likeHistory.forEach(function(lh){if(new Date(lh.time).getTime()>=todayTs)todayLikes++})
+    }
+  });
+  // Today's new comments count
+  var todayComments=0;
+  myPosts.forEach(function(p){
+    (p.commentList||[]).forEach(function(c){if(new Date(c.time).getTime()>=todayTs)todayComments++})
+  });
   setHeroNum('heroTodayPosts',todayPosts);
   setHeroNum('heroTodayLikes',todayLikes);
   setHeroNum('heroTodayComments',todayComments)
@@ -2779,7 +2814,9 @@ function initMoodTracking(){
   var moodBtns=document.querySelectorAll('.mood-btn');
   if(!moodBtns.length)return;
   var today=ymd();var moodData=getMoodData();var todayMood=moodData[today];
+  // Clear all active states first to avoid leaking state across users
   moodBtns.forEach(function(btn){
+    btn.classList.remove('mood-active');
     var mood=btn.getAttribute('data-mood');
     if(mood===todayMood)btn.classList.add('mood-active');
     btn.onclick=function(){
@@ -2792,8 +2829,14 @@ function initMoodTracking(){
   });
   updateHeroStreak()
 }
-function getMoodData(){try{return JSON.parse(localStorage.getItem('fuguang_moods')||'{}')}catch(e){return{}}}
-function saveMoodData(d){try{localStorage.setItem('fuguang_moods',JSON.stringify(d))}catch(e){}}
+function getMoodData(){
+  if(!currentUser)return{};
+  try{return JSON.parse(localStorage.getItem('fuguang_moods_'+currentUser.user)||'{}')}catch(e){return{}}
+}
+function saveMoodData(d){
+  if(!currentUser)return;
+  try{localStorage.setItem('fuguang_moods_'+currentUser.user,JSON.stringify(d))}catch(e){}
+}
 function updateHeroStreak(){
   var badge=document.getElementById('heroStreakBadge');if(!badge)return;
   var streak=calcStreak();badge.textContent='🔥 '+streak+'天';badge.style.display=streak>0?'inline-flex':'none'
